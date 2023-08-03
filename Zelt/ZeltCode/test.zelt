@@ -1,0 +1,112 @@
+
+// Welcome to Zelt!
+// Zelt is a programming language and development environment
+// that is designed to be easy to learn and use.
+// It is primarliy designed for web game development.
+// Zelt is currently in development and is not ready for use.
+// This is a sample Zelt program that demonstrates the syntax of the language.
+// Note to self: Need to add multi-line comments LOL
+
+/*
+
+/*
+Nested multi-line comment test
+*/
+
+*/
+
+// Variable declarations
+
+stringDec : String;
+floatDec : Float;
+intDec : Int;
+boolDec : Bool;
+
+// Multiple variable declarations
+str1, str2, str3 : String;
+int1, int2 : Int;
+fun1, fun2 : Int (Int) -> Int;
+
+
+// For now I'm only going to have Lists and Dictionaries
+// Maybe I'll add Sets and Tuples later
+
+// TODO
+// List declarations
+intListDec : [Int];
+stringListDec : [String];
+
+// Dictionary declarations
+intDictDec : [Int -> Int];
+stringDictDec : [String -> String];
+intStringDictDec : [Int -> String];
+
+// Function declarations
+
+// Without caller type
+intFuncDec : (Int) -> Int;
+stringFuncDec : (Int, String) -> Int, String;
+listFuncDec : (Int, [String]) -> [String], Int;
+dictFuncDec : (Int, String) -> [Int -> String];
+
+// With caller type
+intFuncDec : Int (Int) -> Int;
+stringFuncDec : Bool (Int, String) -> Int, String;
+listFuncDec : List (Int, [String]) -> [String], Int;
+dictFuncDec : Dict (Int, String) -> [Int -> String];
+
+
+/* -- Types to be added -- Maybe --
+// I'm not sure if I want to add these types yet
+charDec : Char;
+doubleDec : Double;
+longDec : Long;
+shortDec : Short;
+byteDec : Byte;
+uintDec : UInt;
+ulongDec : ULong;
+ushortDec : UShort;
+ubyteDec : UByte;
+*/
+
+// Variable declarations with assignments
+strD : String = "Logan";
+intD : Int = 4;
+floatD : Float = 4.9;
+
+// Variable assignments these do not require the variable to be declared first
+i := "Logan";
+j := 4.9;
+k := 23;
+
+// Variable assignments these require the variable to be declared first
+
+i = "Logan";
+j = 4.9;
+k = 23;
+
+print("Here");
+
+/* --- CURRENTLY NOT SUPPORTED ---
+
+j = j * 3.2;
+
+k = 24 + 1;
+
+x : Int;
+
+x = 0;
+
+if x < 10 {
+  print("x is less than 10");
+} else {
+  print("x is greater than or equal to 10");
+}
+
+while x < 10 {
+  x = x + 1;
+  print(x);
+}
+
+print("Exited loop");
+*/

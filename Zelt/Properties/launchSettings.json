@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Zelt": {
+      "commandName": "Project",
+      "commandLineArgs": "ZeltCode\\test.zelt"
+    }
+  }
+}

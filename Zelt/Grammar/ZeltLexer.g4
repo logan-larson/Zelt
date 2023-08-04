@@ -35,6 +35,7 @@ PRINT: 'print';
 
 STRUCT : 'struct';
 INTERFACE : 'interface';
+ITYPE : 'IType';
 // ENUM : 'enum'; Don't know if we'll have enums yet
 
 // Control flow

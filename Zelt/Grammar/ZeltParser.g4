@@ -20,6 +20,8 @@ statement
 	| assignmentStatement
 	| functionCallStatement
 	| printStatement
+	| interfaceDeclaration
+	| structDeclaration
 	| functionDeclaration
 	| returnStatement
 	;
@@ -72,6 +74,16 @@ functionDeclaration
 	| LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
 	;
 
+interfaceDeclaration
+	// interface Splittable { IType split() => IType, IType; }
+	: INTERFACE IDENTIFIER interfaceBlock
+	;
+
+structDeclaration
+	// struct Vector2 { x : Int; y : Int; }
+	: STRUCT IDENTIFIER (COLON identifierList)? structBlock
+	;
+
 parameterDeclarationList
 	: parameterDeclaration (COMMA parameterDeclaration)*
 	;
@@ -83,6 +95,12 @@ parameterDeclaration
 	| assignment
 	// x := 5
 	| inferAssignment
+	;
+
+functionSignature
+	// add(Int, Int) => Int
+	: ITYPE functionIdentifier LEFT_PAREN parameterTypeList? RIGHT_PAREN DOUBLE_ARROW returnTypeList SEMICOLON
+	| functionIdentifier LEFT_PAREN parameterTypeList? RIGHT_PAREN DOUBLE_ARROW returnTypeList SEMICOLON
 	;
 
 
@@ -123,13 +141,14 @@ functionCallStatement
 functionCall
 	// add(x, Vector2(), 6)
 	: functionIdentifier LEFT_PAREN expressionList? RIGHT_PAREN
+	// caller.add(Vector2(1, 2))
+	| CALLER PERIOD functionIdentifier LEFT_PAREN expressionList? RIGHT_PAREN
 	// myVector2.add(Vector2(1, 2))
 	| IDENTIFIER PERIOD functionIdentifier LEFT_PAREN expressionList? RIGHT_PAREN
 	;
 
 expressionList
-	: expression (COMMA expression)* COMMA ELLIPSIS
-	| expression (COMMA expression)*
+	: expression (COMMA expression)*
 	;
 
 expression
@@ -179,8 +198,6 @@ expression
 typeList
 	// Int, Float, Int
 	: type (COMMA type)*
-	// Int, ...
-	| type (COMMA type)* COMMA ELLIPSIS
 	;
 
 parameterTypeList
@@ -202,6 +219,9 @@ type
 
 	// [Int] -- list type
 	| listType
+
+	// IType -- interface type used for getting the type that implements the interface
+	| ITYPE
 
 	// Int -- type
 	| IDENTIFIER
@@ -264,6 +284,16 @@ functionIdentifier
 block 
 	// { x := 5; y := 3.14; }
 	: LEFT_BRACE line* RIGHT_BRACE;
+
+interfaceBlock
+	// { IType add(IType x) => IType; IType square() => IType; retString() => String }
+	: LEFT_BRACE functionSignature* RIGHT_BRACE
+	;
+
+structBlock
+	// { x :: Int; y :: Float; }
+	: LEFT_BRACE (declarationStatement | inferAssignment SEMICOLON | assignment SEMICOLON )* RIGHT_BRACE
+	;
 
 
 // ---------------------------------------------------------------------------------------------

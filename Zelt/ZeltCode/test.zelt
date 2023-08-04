@@ -30,13 +30,6 @@ floatDec : Float;
 intDec : Int;
 boolDec : Bool;
 
-// Multiple variable declarations with the same type
-print("Multiple variable declarations with the same type");
-
-str1, str2, str3 : String, ...;
-int1, int2 : Int, ...;
-fun1, fun2 : Int (Int) => Int, ...;
-
 // Multiple variable declarations with different types
 print("Multiple variable declarations with different types");
 
@@ -144,29 +137,27 @@ stringFuncDec(y : Int, z : String) => Int, String {
 }
 
 
+struct Vector2 {
+	x : Float;
+	y : Float;
+}
+
+struct Vector3 {
+	x, y, z : Float, Float, Float;
+}
+
+interface Additive {
+	IType add(IType) => IType;
+}
+
+struct Vector2 : Additive, Multiplicative, Divisive {
+	x : Float;
+	y : Float;
+}
+
+Vector2 add(v : Vector2) => Vector2 {
+	return Vector2(caller.x + v.x, caller.y + v.y);
+}
+
 
 print("DONE");
-
-/* --- CURRENTLY NOT SUPPORTED ---
-
-j = j * 3.2;
-
-k = 24 + 1;
-
-x : Int;
-
-x = 0;
-
-if x < 10 {
-  print("x is less than 10");
-} else {
-  print("x is greater than or equal to 10");
-}
-
-while x < 10 {
-  x = x + 1;
-  print(x);
-}
-
-print("Exited loop");
-*/

@@ -20,20 +20,38 @@ namespace Zelt.Visitors
 
         public override object VisitDeclarationStatement([NotNull] ZeltParser.DeclarationStatementContext context)
         {
-            Console.WriteLine($"Declaration Statement: {context.GetText()}");
+            Console.WriteLine($"Declaration Statement: {context.GetText()}\n");
             return base.VisitDeclarationStatement(context);
         }
 
         public override object VisitAssignmentStatement([NotNull] ZeltParser.AssignmentStatementContext context)
         {
-            Console.WriteLine($"Assignment Statement: {context.GetText()}");
+            Console.WriteLine($"Assignment Statement: {context.GetText()}\n");
             return base.VisitAssignmentStatement(context);
         }
 
         public override object VisitFunctionCallStatement([NotNull] ZeltParser.FunctionCallStatementContext context)
         {
-            Console.WriteLine($"Function Call Statement: {context.GetText()}");
+            Console.WriteLine($"Function Call Statement: {context.GetText()}\n");
             return base.VisitFunctionCallStatement(context);
+        }
+
+        public override object VisitFunctionDeclaration([NotNull] ZeltParser.FunctionDeclarationContext context)
+        {
+            Console.WriteLine($"Function Declaration: {context.GetText()}\n");
+            return base.VisitFunctionDeclaration(context);
+        }
+
+        public override object VisitInterfaceDeclaration([NotNull] ZeltParser.InterfaceDeclarationContext context)
+        {
+            Console.WriteLine($"Interface Declaration: {context.GetText()}\n");
+            return base.VisitInterfaceDeclaration(context);
+        }
+
+        public override object VisitStructDeclaration([NotNull] ZeltParser.StructDeclarationContext context)
+        {
+            Console.WriteLine($"Struct Declaration: {context.GetText()}\n");
+            return base.VisitStructDeclaration(context);
         }
 
     }

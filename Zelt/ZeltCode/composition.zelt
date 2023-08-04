@@ -1,0 +1,95 @@
+// ------------------------------------------------------------------
+// ------------------ Composition & Constructors --------------------
+// ------------------------------------------------------------------
+
+/*
+square() is a top-level function that can be invoked by simply calling it.
+You will see the structs below utilize this function.
+E.g. square(5); // evaluates to 25
+*/
+
+square(x : Float) => Float {
+	return x * x;
+}
+
+
+/*
+I'm defining an Areable interface. It has one function signature area()
+Structs that implement this interface, either implicity or explicity must
+implement the area() function.
+*/
+
+interface Areable {
+	IType area() => Float;
+}
+
+
+/*
+Now I'm defining a Circle struct that explicity implements the Areable
+interface. That means there must exist a function area() with a Circle
+caller.
+*/
+
+struct Circle : Areable {
+		radius : Float = 4.0; // Structs must define the default values of their fields in their body or their constructor
+}
+
+Circle area() => Float {
+	return 3.14 * square(caller.radius); // caller is how you refer to the struct that is calling the method
+}
+
+/*
+Now I'm defining a Square struct. This struct doesn't explicity implement
+the area interface, but it does provide a function area() with a Square
+caller. That means the Square struct implicity implements the Areable
+interface
+*/
+
+struct Square {
+	sideLength : Float;
+}
+
+// This is a constructor. Since the Square struct body doesn't contain a definition for sideLength,
+// it must be defined here.
+Square() => Square {
+	sideLength = 3.0;
+}
+
+Square area() => Float {
+	return square(caller.sideLength);
+}
+
+
+/*
+Here demonstrates the real power of interfaces. We can define a function that has an
+Areable as the caller. That means that any struct that implements the Areable interface
+can call this function.
+*/
+
+Areable volume(height: Float) => Float {
+	return caller.area() * height;
+}
+
+
+// main() is the entry point to every application.
+main() => Void {
+
+	myCircle : Circle = Circle(); // calling a struct's name followed by parentheses, instantiates a default object
+	mySquare := Square(); // this line uses type inference to assign the Square type to mySquare
+
+	h : Float = 2.0;
+
+	circleVolume := myCircle.volume(h);
+	squareVolume := mySquare.volume(h);
+	
+	print("Circle Volume: " + circleVolume);
+	print("Square Volume: " + squareVolume);
+	
+	return;
+} 
+
+/*
+Output:
+Circle Volume: 100.48
+Square Volume: 18.0
+*/

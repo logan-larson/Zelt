@@ -21,6 +21,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="ZeltCode\composition.zelt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="ZeltCode\test.zelt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

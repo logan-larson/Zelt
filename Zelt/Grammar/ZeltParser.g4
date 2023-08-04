@@ -142,9 +142,6 @@ expression
 	// [1, 2, 3, 4, 5], [1..10], [1..10, 2], [1, 2..10]
 	| list										#listExpression
 
-	// [ { 1 :: "one"}, {2 :: "two"}, {3 :: "three"} ], [ { 1 :: [1..5]}, {2 :: [2..6]}, {3 :: [3..7]} ]
-	//| dictionary								#dictionaryExpression
-
 	// myVector2.x, _window.length, caller.y
 	| accessor									#accessorExpression
 
@@ -206,10 +203,6 @@ type
 	// [Int] -- list type
 	| LEFT_BRACKET type RIGHT_BRACKET
 
-	// Scraping the idea of a dictionary for now
-	// <Int -> String> -- dictionary type
-	//| LESS_THAN type ARROW type GREATER_THAN
-
 	// Int -- type
 	| IDENTIFIER
 	;
@@ -243,18 +236,6 @@ listElement
 	// 1..5, 10..5 => [1, 2, 3, 4, 5], [10, 9, 8, 7, 6, 5]
 	| expression DOUBLE_PERIOD expression
 	;
-
-//dictionary
-	// < {1 :: "one"}, {2 :: "two"}, {3 :: "three"} >, < {1 :: [1..5]}, {2 :: [2..6]}, {3 :: [3..7]} >
-	//: LESS_THAN dictionaryElement (COMMA dictionaryElement)* GREATER_THAN
-	// [{}] => empty dictionary
-	//| LESS_THAN LEFT_BRACE RIGHT_BRACE GREATER_THAN
-	//;
-
-//dictionaryElement
-	// { 1 :: "one" }, { 2 -> "two" }, { 3 -> "three" }
-	//: LEFT_BRACE expression DOUBLE_COLON expression RIGHT_BRACE
-	//;
 
 functionIdentifier
 	// add, render

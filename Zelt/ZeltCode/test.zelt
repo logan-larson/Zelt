@@ -1,4 +1,8 @@
 
+print("");
+print("");
+print("");
+print("Welcome to Zelt!");
 // Welcome to Zelt!
 // Zelt is a programming language and development environment
 // that is designed to be easy to learn and use.
@@ -15,39 +19,60 @@ Nested multi-line comment test
 
 */
 
+
 // Variable declarations
+print("Variable declarations");
+
+print("Single variable declarations");
 
 stringDec : String;
 floatDec : Float;
 intDec : Int;
 boolDec : Bool;
 
-// Multiple variable declarations
-str1, str2, str3 : String;
-int1, int2 : Int;
-fun1, fun2 : Int (Int) -> Int;
+// Multiple variable declarations with the same type
+print("Multiple variable declarations with the same type");
+
+str1, str2, str3 : String, ...;
+int1, int2 : Int, ...;
+fun1, fun2 : Int (Int) -> Int, ...;
+
+// Multiple variable declarations with different types
+print("Multiple variable declarations with different types");
+
+str1, int2, bool3 : String, Int, Bool;
+int1, float2 : Int, Float;
+fun1, fun2 : Int (Int) -> Int, () -> String;
 
 
 // For now I'm only going to have Lists and Dictionaries
 // Maybe I'll add Sets and Tuples later
 
-// TODO
 // List declarations
+print("List declarations");
+
 intListDec : [Int];
 stringListDec : [String];
 
 // Dictionary declarations
+print("Dictionary declarations");
+
 intDictDec : [Int -> Int];
 stringDictDec : [String -> String];
 intStringDictDec : [Int -> String];
 
 // Function declarations
+print("Function declarations");
+
+print("Without caller type");
 
 // Without caller type
 intFuncDec : (Int) -> Int;
 stringFuncDec : (Int, String) -> Int, String;
 listFuncDec : (Int, [String]) -> [String], Int;
 dictFuncDec : (Int, String) -> [Int -> String];
+
+print("With caller type");
 
 // With caller type
 intFuncDec : Int (Int) -> Int;
@@ -70,22 +95,27 @@ ubyteDec : UByte;
 */
 
 // Variable declarations with assignments
+print("Variable declarations with assignments");
+
 strD : String = "Logan";
 intD : Int = 4;
-floatD : Float = 4.9;
+floatD, boolD : Float, Bool = 4.9, false;
 
 // Variable assignments these do not require the variable to be declared first
+print("Variable declaration and assignment, type infered");
+
 i := "Logan";
 j := 4.9;
-k := 23;
+k, a := 23, false;
 
 // Variable assignments these require the variable to be declared first
+print("Variable assignments");
 
 i = "Logan";
 j = 4.9;
-k = 23;
+k, a = 23, false;
 
-print("Here");
+print("DONE");
 
 /* --- CURRENTLY NOT SUPPORTED ---
 

@@ -61,6 +61,7 @@ RIGHT_PAREN : ')';
 LEFT_BRACKET : '[';
 RIGHT_BRACKET : ']';
 QUESTION_MARK : '?';
+ELLIPSIS : '...';
 PERIOD : '.';
 COLON : ':';
 ARROW : '->';
@@ -98,6 +99,7 @@ IS_DEFINED_AS : '=';
 // -- Identifiers --
 
 IDENTIFIER : [_]?[a-zA-Z][a-zA-Z0-9_]*;
+UNDERSCORE : '_';
 
 
 // -- Comments continued --

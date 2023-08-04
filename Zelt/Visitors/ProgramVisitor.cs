@@ -14,7 +14,7 @@ namespace Zelt.Visitors
 
         public override object VisitPrintStatement([NotNull] ZeltParser.PrintStatementContext context)
         {
-            Console.WriteLine(context.GetChild(2).GetText());
+            Console.WriteLine($"\n{context.GetChild(2).GetText()}\n");
             return base.VisitPrintStatement(context);
         }
 

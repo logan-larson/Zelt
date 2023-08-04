@@ -24,6 +24,8 @@ statement
 // TEMP: I'm going to use this to test how far the parser gets
 printStatement : PRINT LEFT_PAREN expression RIGHT_PAREN SEMICOLON ;
 
+// -- Control flow --
+
 ifStatement: IF expression block (ELSE elseIfStatement)? ;
 
 elseIfStatement
@@ -40,61 +42,88 @@ returnStatement
 	| RETURN assignment (COMMA assignment)* SEMICOLON
 	;
 
+// -- Declarations --
+
 declarationStatement
 	: declaration SEMICOLON
 	;
 
 declaration
-	// x : Int; y, z : Float;
-	: identifierList COLON type
-	// x : Int = 5; y, z : Float = 3.14;
-	| identifierList COLON type IS_DEFINED_AS expression
-	// z := 5; y, z := 3.14;
-	| identifierList COLON IS_DEFINED_AS expression
+	// x : Int; y, z : Float; a, b : Int, String;
+	: identifierList COLON typeList
 	; 
-
-functionCall : IDENTIFIER LEFT_PAREN (expression (COMMA expression)*)? RIGHT_PAREN ;
 
 // TODO: Add support for multiple return values
 // Eventually, I want to be able to do something like this:
+
 // add(x : Int, y : Int) -> Int, Int { return x + y, x - y; }
-// TODO: Add support for default values
-// TODO: Change type to be a list of IDENTIFIERs
 functionDeclaration
+
 	// add(x : Int, y : Int) -> Int { return x + y; }
-	: IDENTIFIER LEFT_PAREN parameterList? RIGHT_PAREN ARROW returnTypeList block
+	: IDENTIFIER LEFT_PAREN parameterDeclarationList? RIGHT_PAREN ARROW typeList block
+
 	// Vector2 add(v : Vector2) -> Vector2 { return Vector2(caller.x + x, caller.y + y); }
-	| IDENTIFIER IDENTIFIER LEFT_PAREN parameterList? RIGHT_PAREN ARROW returnTypeList block
+	| type IDENTIFIER LEFT_PAREN parameterDeclarationList? RIGHT_PAREN ARROW typeList block
+
 	// (x : Int) -> Int { return x * x; }
-	| LEFT_PAREN parameterList? RIGHT_PAREN ARROW returnTypeList block
+	| LEFT_PAREN parameterDeclarationList? RIGHT_PAREN ARROW typeList block
 	;
 
-parameterList
-	: parameter (COMMA parameter)*
+parameterDeclarationList
+	: parameterDeclaration (COMMA parameterDeclaration)*
 	;
 
-parameter
-	: IDENTIFIER COLON IDENTIFIER
-	| IDENTIFIER COLON IDENTIFIER IS_DEFINED_AS expression
-	| IDENTIFIER COLON IS_DEFINED_AS expression
+parameterDeclaration
+	// x : Int
+	: declaration
+	// x : Int = 5
+	| assignment
+	// x := 5
+	| inferAssignment
 	;
 
-returnTypeList
-	: IDENTIFIER (COMMA IDENTIFIER)*
-	;
+// -- Assignments --
 
 assignmentStatement
 	: assignment SEMICOLON
+	| inferAssignment SEMICOLON
+	| simpleAssignment SEMICOLON
 	;
 
 assignment
-	: IDENTIFIER IS_DEFINED_AS expression
+	// x : Int = 5; y, z : Float = 3.14;
+	: identifierList COLON typeList IS_DEFINED_AS expressionList
+	;
+
+inferAssignment
+	// z := 5; y, z := 3.14, 3;
+	: identifierList COLON IS_DEFINED_AS expressionList
+	;
+
+simpleAssignment
+	// z = 5; y, z = 3.14, 3;
+	: identifierList IS_DEFINED_AS expressionList
+	;
+
+// -- Expressions --
+
+functionCall
+	// add(x, y := 5, 6)
+	: IDENTIFIER LEFT_PAREN expressionList? RIGHT_PAREN
+	// myVector2.add(v : Vector2 = Vector2(1, 2))
+	| IDENTIFIER PERIOD IDENTIFIER LEFT_PAREN expressionList? RIGHT_PAREN
+	;
+
+expressionList
+	: expression (COMMA expression)*
+	| expression (COMMA expression)* COMMA ELLIPSIS
 	;
 
 expression
 	: literal									#literalExpression
-	| accessor									#identifierExpression
+	| accessor									#accessorExpression
 	| functionCall								#functionCallExpression
+	| assignment								#assignmentExpression
 	| LEFT_PAREN expression RIGHT_PAREN			#parenExpression
 	| NOT expression							#notExpression
 	| expression multOp expression				#multExpression
@@ -102,17 +131,34 @@ expression
 	| expression relOp expression				#relationalExpression
 	| expression boolOp expression				#boolOpExpression
 	| CALLER PERIOD IDENTIFIER					#callerExpression
+	| UNDERSCORE								#underscoreExpression
 	;
 
+// A caller is a type. Meaning it can be a struct or an interface.
+// When the caller is a struct, it's a reference to the struct.
+// When the caller is an interface, it's a reference to the struct that implements the interface.
+
+
+// -- Types --
+
 typeList
+	: type (COMMA type)*
+	| type (COMMA type)* COMMA ELLIPSIS
+	;
+
+parameterTypeList
+	: (type (COMMA type)*)?
+	;
+
+returnTypeList
 	: type (COMMA type)*
 	;
 
 type
 	// String (Int, Int) -> Int, Int -- function type with a caller type
-	: type LEFT_PAREN typeList RIGHT_PAREN ARROW typeList
+	: type LEFT_PAREN parameterTypeList RIGHT_PAREN ARROW returnTypeList
 	// (Int, Int) -> Int, Int -- function type without a caller type
-	| LEFT_PAREN typeList RIGHT_PAREN ARROW typeList
+	| LEFT_PAREN parameterTypeList RIGHT_PAREN ARROW returnTypeList
 	// [Int] -- array type
 	| LEFT_BRACKET type RIGHT_BRACKET
 	// [Int -> String] -- dictionary type
@@ -121,9 +167,13 @@ type
 	| IDENTIFIER
 	;
 
+// -- Literals --
+
 identifierList
 	: IDENTIFIER (COMMA IDENTIFIER)*
 	;
+
+// -- Operators --
 
 accessor
 	// boxDimensions.x -- used for accessing the properties of a variable that is a struct

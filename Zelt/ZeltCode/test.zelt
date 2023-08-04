@@ -54,7 +54,7 @@ print("List declarations");
 intListDec : [Int];
 stringListDec : [String];
 
-// Function declarations
+// Function declarations -- Useful for interfaces??
 print("Function declarations");
 
 print("Without caller type");
@@ -117,6 +117,32 @@ print("Without caller type");
 intFuncCall(4);
 stringFuncCall(4, "Logan");
 listFuncCall(4, ["Logan", "Larson"]);
+
+
+// Function definitions
+print("Function declarations");
+
+print("Without caller type");
+
+// Without caller type
+intFuncDec(x : Int) => Int {
+  return x * 2;
+}
+stringFuncDec(y : Int, z : String) => Int, String {
+  return y, z;
+}
+listFuncDec(z : Int, x : [String]) => [String] {
+	y := x;
+	return y;
+}
+voidFuncDec(z : Int, x : Bool) => Void {
+	return;
+}
+// Do I want named return values??
+stringFuncDec(y : Int, z : String) => Int, String {
+  return 0, "val";
+}
+
 
 
 print("DONE");

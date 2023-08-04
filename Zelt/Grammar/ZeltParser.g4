@@ -19,9 +19,9 @@ statement
 	: declarationStatement
 	| assignmentStatement
 	| functionCallStatement
-	//| functionDeclaration
-	//| returnStatement
 	| printStatement
+	| functionDeclaration
+	| returnStatement
 	;
 
 // TEMP: I'm going to use this to test how far the parser gets
@@ -42,10 +42,8 @@ elseIfStatement
 whileStatement : WHILE expression block ;
 
 returnStatement
-	: RETURN expression SEMICOLON
-	| RETURN SEMICOLON
+	: RETURN SEMICOLON
 	| RETURN expression (COMMA expression)* SEMICOLON
-	| RETURN assignment (COMMA assignment)* SEMICOLON
 	;
 
 
@@ -64,13 +62,13 @@ declaration
 
 functionDeclaration
 
-	// add(x : Int, y : Int) -> Int { return x + y; }
+	// add(x : Int, y : Int) => Int { return x + y; }
 	: functionIdentifier LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
 
-	// Vector2 add(v : Vector2) -> Vector2 { return Vector2(caller.x + x, caller.y + y); }
+	// Vector2 add(v : Vector2) => Vector2 { return Vector2(caller.x + x, caller.y + y); }
 	| type functionIdentifier LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
 
-	// (x : Int) -> Int { return x * x; }
+	// (x : Int) => Int { return x * x; }
 	| LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
 	;
 
@@ -130,8 +128,8 @@ functionCall
 	;
 
 expressionList
-	: expression (COMMA expression)*
-	| expression (COMMA expression)* COMMA ELLIPSIS
+	: expression (COMMA expression)* COMMA ELLIPSIS
+	| expression (COMMA expression)*
 	;
 
 expression
@@ -144,6 +142,9 @@ expression
 
 	// myVector2.x, _window.length, caller.y
 	| accessor									#accessorExpression
+
+	// x, y, z, _a, _b, _c
+	| IDENTIFIER								#identifierExpression
 
 	// add(x, Vector2(), 6) -- Vector2() is a function call to the Vector2 'constructor'
 	| functionCall								#functionCallExpression
@@ -193,18 +194,32 @@ returnTypeList
 	;
 
 type
-
 	// String (Int, Int) -> Int, Int -- function type with a caller type
-	: type LEFT_PAREN parameterTypeList RIGHT_PAREN DOUBLE_ARROW returnTypeList
+	: functionCallerType
 
 	// (Int, Int) -> Int, Int -- function type without a caller type
-	| LEFT_PAREN parameterTypeList RIGHT_PAREN DOUBLE_ARROW returnTypeList
+	| functionType
 
 	// [Int] -- list type
-	| LEFT_BRACKET type RIGHT_BRACKET
+	| listType
 
 	// Int -- type
 	| IDENTIFIER
+	;
+
+functionCallerType
+	// String (Int, Int) -> Int, Int -- function type with a caller type
+	: IDENTIFIER LEFT_PAREN parameterTypeList RIGHT_PAREN DOUBLE_ARROW returnTypeList
+	;
+
+functionType
+	// (Int, Int) -> Int, Int -- function type without a caller type
+	: LEFT_PAREN parameterTypeList RIGHT_PAREN DOUBLE_ARROW returnTypeList
+	;
+
+listType
+	// [Int] -- list type
+	: LEFT_BRACKET type RIGHT_BRACKET
 	;
 
 

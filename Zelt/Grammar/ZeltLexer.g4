@@ -3,7 +3,7 @@ lexer grammar ZeltLexer;
 
 // -- Literals --
 
-INTEGER : [0-9]+;
+INTEGER : '-'?[0-9]+;
 FLOAT : [0-9]+ '.' [0-9]+;
 STRING : '"' .*? '"';
 BOOL : 'true' | 'false';
@@ -42,6 +42,8 @@ ITYPE : 'IType';
 IF : 'if';
 ELSE : 'else';
 WHILE : 'while';
+EACH : 'each';
+IN : 'in';
 
 // Misc
 CALLER : 'caller';

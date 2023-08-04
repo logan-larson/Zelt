@@ -1,0 +1,16 @@
+
+if x < 0 {
+	return -1;
+} else if x > 0 {
+	return 1;
+} else {
+	return 0;
+}
+
+while x < 5 {
+	x = x + 1;
+}
+
+each x : Int in [1, 2, 3, 4, 5] {
+	print(x);
+}

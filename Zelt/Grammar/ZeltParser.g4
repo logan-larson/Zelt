@@ -11,13 +11,12 @@ program : line* EOF ;
 
 line 
 	: statement
-	//| ifStatement
-	//| whileStatement
 	;
 
 statement
 	: declarationStatement
 	| assignmentStatement
+	| controlFlowStatement
 	| functionCallStatement
 	| printStatement
 	| interfaceDeclaration
@@ -34,6 +33,12 @@ printStatement : PRINT LEFT_PAREN expression RIGHT_PAREN SEMICOLON ;
 // ------------------------------------- Control Flow ------------------------------------------
 // ---------------------------------------------------------------------------------------------
 
+controlFlowStatement
+	: ifStatement
+	| whileStatement
+	| eachStatement
+	;
+
 ifStatement: IF expression block (ELSE elseIfStatement)? ;
 
 elseIfStatement
@@ -42,6 +47,8 @@ elseIfStatement
 	;
 
 whileStatement : WHILE expression block ;
+
+eachStatement : EACH declaration IN expression block ;
 
 returnStatement
 	: RETURN SEMICOLON

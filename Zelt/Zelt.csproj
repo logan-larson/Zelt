@@ -24,6 +24,9 @@
     <None Update="ZeltCode\composition.zelt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="ZeltCode\controlFlow.zelt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="ZeltCode\test.zelt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

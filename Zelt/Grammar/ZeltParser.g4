@@ -2,7 +2,10 @@ parser grammar ZeltParser;
 
 options { tokenVocab=ZeltLexer; }
 
-// Parser rules
+
+// ---------------------------------------------------------------------------------------------
+// ------------------------------------- Program -----------------------------------------------
+// ---------------------------------------------------------------------------------------------
 
 program : line* EOF ;
 
@@ -24,7 +27,10 @@ statement
 // TEMP: I'm going to use this to test how far the parser gets
 printStatement : PRINT LEFT_PAREN expression RIGHT_PAREN SEMICOLON ;
 
-// -- Control flow --
+
+// ---------------------------------------------------------------------------------------------
+// ------------------------------------- Control Flow ------------------------------------------
+// ---------------------------------------------------------------------------------------------
 
 ifStatement: IF expression block (ELSE elseIfStatement)? ;
 
@@ -42,7 +48,10 @@ returnStatement
 	| RETURN assignment (COMMA assignment)* SEMICOLON
 	;
 
-// -- Declarations --
+
+// ---------------------------------------------------------------------------------------------
+// ------------------------------------- Declarations ------------------------------------------
+// ---------------------------------------------------------------------------------------------
 
 declarationStatement
 	: declaration SEMICOLON
@@ -82,7 +91,10 @@ parameterDeclaration
 	| inferAssignment
 	;
 
-// -- Assignments --
+
+// ---------------------------------------------------------------------------------------------
+// ------------------------------------- Assignments -------------------------------------------
+// ---------------------------------------------------------------------------------------------
 
 assignmentStatement
 	: assignment SEMICOLON
@@ -105,7 +117,10 @@ simpleAssignment
 	: identifierList IS_DEFINED_AS expressionList
 	;
 
-// -- Expressions --
+
+// ---------------------------------------------------------------------------------------------
+// ------------------------------------- Expressions -------------------------------------------
+// ---------------------------------------------------------------------------------------------
 
 functionCall
 	// add(x, y := 5, 6)
@@ -134,12 +149,10 @@ expression
 	| UNDERSCORE								#underscoreExpression
 	;
 
-// A caller is a type. Meaning it can be a struct or an interface.
-// When the caller is a struct, it's a reference to the struct.
-// When the caller is an interface, it's a reference to the struct that implements the interface.
 
-
-// -- Types --
+// ---------------------------------------------------------------------------------------------
+// --------------------------------------- Types -----------------------------------------------
+// ---------------------------------------------------------------------------------------------
 
 typeList
 	: type (COMMA type)*
@@ -167,19 +180,13 @@ type
 	| IDENTIFIER
 	;
 
-// -- Literals --
+
+// ---------------------------------------------------------------------------------------------
+// ------------------------------------- Literals ----------------------------------------------
+// ---------------------------------------------------------------------------------------------
 
 identifierList
 	: IDENTIFIER (COMMA IDENTIFIER)*
-	;
-
-// -- Operators --
-
-accessor
-	// boxDimensions.x -- used for accessing the properties of a variable that is a struct
-	: IDENTIFIER PERIOD IDENTIFIER
-	// caller.x -- used for accessing the caller's properties in a function
-	| CALLER PERIOD IDENTIFIER
 	;
 
 literal
@@ -190,19 +197,24 @@ literal
 	| NULL
 	;
 
+
+// ---------------------------------------------------------------------------------------------
+// -------------------------------------- Blocks -----------------------------------------------
+// ---------------------------------------------------------------------------------------------
+
 block : LEFT_BRACE line* RIGHT_BRACE;
 
-// Types are just identifiers that I'm going to check against a list of known types
-// So these are temporary
-/*
-type
-	: INT_TYPE
-	| FLOAT_TYPE
-	| STRING_TYPE
-	| BOOL_TYPE
-	| FUNCTION_TYPE
+
+// ---------------------------------------------------------------------------------------------
+// ------------------------------------- Operators ---------------------------------------------
+// ---------------------------------------------------------------------------------------------
+
+accessor
+	// boxDimensions.x -- used for accessing the properties of a variable that is a struct
+	: IDENTIFIER PERIOD IDENTIFIER
+	// caller.x -- used for accessing the caller's properties in a function
+	| CALLER PERIOD IDENTIFIER
 	;
-*/
 
 addOp
 	: PLUS

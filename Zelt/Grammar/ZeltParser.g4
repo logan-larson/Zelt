@@ -18,7 +18,7 @@ line
 statement
 	: declarationStatement
 	| assignmentStatement
-	//| functionCall
+	| functionCallStatement
 	//| functionDeclaration
 	//| returnStatement
 	| printStatement
@@ -62,20 +62,16 @@ declaration
 	: identifierList COLON typeList
 	; 
 
-// TODO: Add support for multiple return values
-// Eventually, I want to be able to do something like this:
-
-// add(x : Int, y : Int) -> Int, Int { return x + y, x - y; }
 functionDeclaration
 
 	// add(x : Int, y : Int) -> Int { return x + y; }
-	: IDENTIFIER LEFT_PAREN parameterDeclarationList? RIGHT_PAREN ARROW typeList block
+	: functionIdentifier LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
 
 	// Vector2 add(v : Vector2) -> Vector2 { return Vector2(caller.x + x, caller.y + y); }
-	| type IDENTIFIER LEFT_PAREN parameterDeclarationList? RIGHT_PAREN ARROW typeList block
+	| type functionIdentifier LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
 
 	// (x : Int) -> Int { return x * x; }
-	| LEFT_PAREN parameterDeclarationList? RIGHT_PAREN ARROW typeList block
+	| LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
 	;
 
 parameterDeclarationList
@@ -103,7 +99,7 @@ assignmentStatement
 	;
 
 assignment
-	// x : Int = 5; y, z : Float = 3.14;
+	// x : Int = 5; y, z : Float, Int = 3.14, 3;
 	: identifierList COLON typeList IS_DEFINED_AS expressionList
 	;
 
@@ -122,11 +118,15 @@ simpleAssignment
 // ------------------------------------- Expressions -------------------------------------------
 // ---------------------------------------------------------------------------------------------
 
+functionCallStatement
+	: functionCall SEMICOLON
+	;
+
 functionCall
-	// add(x, y := 5, 6)
-	: IDENTIFIER LEFT_PAREN expressionList? RIGHT_PAREN
-	// myVector2.add(v : Vector2 = Vector2(1, 2))
-	| IDENTIFIER PERIOD IDENTIFIER LEFT_PAREN expressionList? RIGHT_PAREN
+	// add(x, Vector2(), 6)
+	: functionIdentifier LEFT_PAREN expressionList? RIGHT_PAREN
+	// myVector2.add(Vector2(1, 2))
+	| IDENTIFIER PERIOD functionIdentifier LEFT_PAREN expressionList? RIGHT_PAREN
 	;
 
 expressionList
@@ -135,17 +135,41 @@ expressionList
 	;
 
 expression
+
+	// 5, 3.14, "Hello, World!", true, false, null
 	: literal									#literalExpression
+
+	// [1, 2, 3, 4, 5], [1..10], [1..10, 2], [1, 2..10]
+	| list										#listExpression
+
+	// [ { 1 :: "one"}, {2 :: "two"}, {3 :: "three"} ], [ { 1 :: [1..5]}, {2 :: [2..6]}, {3 :: [3..7]} ]
+	//| dictionary								#dictionaryExpression
+
+	// myVector2.x, _window.length, caller.y
 	| accessor									#accessorExpression
+
+	// add(x, Vector2(), 6) -- Vector2() is a function call to the Vector2 'constructor'
 	| functionCall								#functionCallExpression
-	| assignment								#assignmentExpression
+
+	// ( x + ( y + z ) )
 	| LEFT_PAREN expression RIGHT_PAREN			#parenExpression
+
+	// ! x == y
 	| NOT expression							#notExpression
+
+	// x * y, x / y, x % y
 	| expression multOp expression				#multExpression
+
+	// x + y, x - y
 	| expression addOp expression				#addExpression
+
+	// x < y, x <= y, x > y, x >= y, x == y, x != y
 	| expression relOp expression				#relationalExpression
+
+	// x && y, x || y
 	| expression boolOp expression				#boolOpExpression
-	| CALLER PERIOD IDENTIFIER					#callerExpression
+
+	// _  -- underscore discards the value of the expression
 	| UNDERSCORE								#underscoreExpression
 	;
 
@@ -155,27 +179,37 @@ expression
 // ---------------------------------------------------------------------------------------------
 
 typeList
+	// Int, Float, Int
 	: type (COMMA type)*
+	// Int, ...
 	| type (COMMA type)* COMMA ELLIPSIS
 	;
 
 parameterTypeList
+	// Int, Float or nothing (no parameters)
 	: (type (COMMA type)*)?
 	;
 
 returnTypeList
+	// Int, Float
 	: type (COMMA type)*
 	;
 
 type
+
 	// String (Int, Int) -> Int, Int -- function type with a caller type
-	: type LEFT_PAREN parameterTypeList RIGHT_PAREN ARROW returnTypeList
+	: type LEFT_PAREN parameterTypeList RIGHT_PAREN DOUBLE_ARROW returnTypeList
+
 	// (Int, Int) -> Int, Int -- function type without a caller type
-	| LEFT_PAREN parameterTypeList RIGHT_PAREN ARROW returnTypeList
-	// [Int] -- array type
+	| LEFT_PAREN parameterTypeList RIGHT_PAREN DOUBLE_ARROW returnTypeList
+
+	// [Int] -- list type
 	| LEFT_BRACKET type RIGHT_BRACKET
-	// [Int -> String] -- dictionary type
-	| LEFT_BRACKET type ARROW type RIGHT_BRACKET
+
+	// Scraping the idea of a dictionary for now
+	// <Int -> String> -- dictionary type
+	//| LESS_THAN type ARROW type GREATER_THAN
+
 	// Int -- type
 	| IDENTIFIER
 	;
@@ -186,10 +220,12 @@ type
 // ---------------------------------------------------------------------------------------------
 
 identifierList
+	// x, _y, z123, R2D2
 	: IDENTIFIER (COMMA IDENTIFIER)*
 	;
 
 literal
+	// 5, 3.14, "Hello, World!", true, false, null
 	: INTEGER
 	| FLOAT
 	| STRING
@@ -197,12 +233,41 @@ literal
 	| NULL
 	;
 
+list
+	// [1, 2, 3, 4, 5], [1..10], [10..5, 2], [3..5, 1, 2..7]
+	: LEFT_BRACKET (listElement (COMMA listElement)*)? RIGHT_BRACKET
+	;
+
+listElement
+	: expression
+	// 1..5, 10..5 => [1, 2, 3, 4, 5], [10, 9, 8, 7, 6, 5]
+	| expression DOUBLE_PERIOD expression
+	;
+
+//dictionary
+	// < {1 :: "one"}, {2 :: "two"}, {3 :: "three"} >, < {1 :: [1..5]}, {2 :: [2..6]}, {3 :: [3..7]} >
+	//: LESS_THAN dictionaryElement (COMMA dictionaryElement)* GREATER_THAN
+	// [{}] => empty dictionary
+	//| LESS_THAN LEFT_BRACE RIGHT_BRACE GREATER_THAN
+	//;
+
+//dictionaryElement
+	// { 1 :: "one" }, { 2 -> "two" }, { 3 -> "three" }
+	//: LEFT_BRACE expression DOUBLE_COLON expression RIGHT_BRACE
+	//;
+
+functionIdentifier
+	// add, render
+	: IDENTIFIER
+	;
 
 // ---------------------------------------------------------------------------------------------
 // -------------------------------------- Blocks -----------------------------------------------
 // ---------------------------------------------------------------------------------------------
 
-block : LEFT_BRACE line* RIGHT_BRACE;
+block 
+	// { x := 5; y := 3.14; }
+	: LEFT_BRACE line* RIGHT_BRACE;
 
 
 // ---------------------------------------------------------------------------------------------
@@ -217,17 +282,20 @@ accessor
 	;
 
 addOp
+	// +, -
 	: PLUS
 	| MINUS
 	;
 
 multOp
+	// *, /, %
 	: MULTIPLY
 	| DIVIDE
 	| MODULO
 	;
 
 relOp
+	// <, >, <=, >=, ==, !=
 	: LESS_THAN
 	| GREATER_THAN
 	| LESS_THAN_OR_EQUAL
@@ -237,6 +305,7 @@ relOp
 	;
 
 boolOp
+	// &&, ||
 	: AND
 	| OR
 	;

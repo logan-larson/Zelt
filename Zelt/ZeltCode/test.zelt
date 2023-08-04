@@ -35,14 +35,14 @@ print("Multiple variable declarations with the same type");
 
 str1, str2, str3 : String, ...;
 int1, int2 : Int, ...;
-fun1, fun2 : Int (Int) -> Int, ...;
+fun1, fun2 : Int (Int) => Int, ...;
 
 // Multiple variable declarations with different types
 print("Multiple variable declarations with different types");
 
 str1, int2, bool3 : String, Int, Bool;
 int1, float2 : Int, Float;
-fun1, fun2 : Int (Int) -> Int, () -> String;
+fun1, fun2 : Int (Int) => Int, () => String;
 
 
 // For now I'm only going to have Lists and Dictionaries
@@ -54,31 +54,22 @@ print("List declarations");
 intListDec : [Int];
 stringListDec : [String];
 
-// Dictionary declarations
-print("Dictionary declarations");
-
-intDictDec : [Int -> Int];
-stringDictDec : [String -> String];
-intStringDictDec : [Int -> String];
-
 // Function declarations
 print("Function declarations");
 
 print("Without caller type");
 
 // Without caller type
-intFuncDec : (Int) -> Int;
-stringFuncDec : (Int, String) -> Int, String;
-listFuncDec : (Int, [String]) -> [String], Int;
-dictFuncDec : (Int, String) -> [Int -> String];
+intFuncDec : (Int) => Int;
+stringFuncDec : (Int, String) => Int, String;
+listFuncDec : (Int, [String]) => [String], Int;
 
 print("With caller type");
 
 // With caller type
-intFuncDec : Int (Int) -> Int;
-stringFuncDec : Bool (Int, String) -> Int, String;
-listFuncDec : List (Int, [String]) -> [String], Int;
-dictFuncDec : Dict (Int, String) -> [Int -> String];
+intFuncDec : Int (Int) => Int;
+stringFuncDec : Bool (Int, String) => Int, String;
+listFuncDec : List (Int, [String]) => [String], Int;
 
 
 /* -- Types to be added -- Maybe --
@@ -114,6 +105,19 @@ print("Variable assignments");
 i = "Logan";
 j = 4.9;
 k, a = 23, false;
+
+
+// Function calls
+print("Function calls");
+
+print("Without caller type");
+
+// Without caller type
+
+intFuncCall(4);
+stringFuncCall(4, "Logan");
+listFuncCall(4, ["Logan", "Larson"]);
+
 
 print("DONE");
 

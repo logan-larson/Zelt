@@ -62,9 +62,12 @@ LEFT_BRACKET : '[';
 RIGHT_BRACKET : ']';
 QUESTION_MARK : '?';
 ELLIPSIS : '...';
+DOUBLE_PERIOD : '..';
 PERIOD : '.';
+DOUBLE_COLON : '::';
 COLON : ':';
 ARROW : '->';
+DOUBLE_ARROW : '=>';
 
 // -- Operators --
 

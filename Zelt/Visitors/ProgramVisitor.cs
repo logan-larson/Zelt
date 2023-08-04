@@ -30,5 +30,11 @@ namespace Zelt.Visitors
             return base.VisitAssignmentStatement(context);
         }
 
+        public override object VisitFunctionCallStatement([NotNull] ZeltParser.FunctionCallStatementContext context)
+        {
+            Console.WriteLine($"Function Call Statement: {context.GetText()}");
+            return base.VisitFunctionCallStatement(context);
+        }
+
     }
 }

@@ -9,9 +9,9 @@ class Program
 {
     static void Main(string[] args)
     {
-        if (args.Length < 1 || args.Length > 1)
+        if (args.Length < 1 || args.Length > 2)
         {
-            Console.WriteLine("Usage: Zelt [REPL | <file>]");
+            Console.WriteLine("Usage: Zelt [REPL | <file>] <output>");
             Environment.Exit(1);
         }
 
@@ -27,7 +27,7 @@ class Program
 
     static void ExecuteREPL()
     {
-        var visitor = new ProgramVisitor();
+        var visitor = new Visitor();
 
         Console.WriteLine("Welcome to the Zelt REPL");
         Console.WriteLine("'quit()' to stop REPL");
@@ -35,6 +35,7 @@ class Program
         while (true)
         {
             // TODO: figure out how to handle multiple lines
+            // Shift+Tab??
 
             Console.Write("> ");
             var line = Console.ReadLine();
@@ -44,7 +45,7 @@ class Program
             CommonTokenStream commonTokenStream = new CommonTokenStream(lexer);
             ZeltParser parser = new ZeltParser(commonTokenStream);
             parser.AddErrorListener(new ErrorListener());
-            visitor.Visit(parser.line());
+            visitor.Visit(parser.statement());
         }
     }
 
@@ -73,8 +74,23 @@ class Program
         {
             ZeltParser parser = new ZeltParser(commonTokenStream);
             parser.AddErrorListener(new ErrorListener());
-            var visitor = new ProgramVisitor();
+            var visitor = new Visitor();
+
+            // AST traversal
             visitor.Visit(parser.program());
+
+            // Type-checking
+            visitor.CheckVariableDeclarationTypes();
+
+            // Code generation
+            if (args.Length > 1)
+            {
+                visitor.WriteOutputFile(args[1]);
+            }
+            else
+            {
+                visitor.WriteOutputFile("out");
+            }
         }
     }
 }

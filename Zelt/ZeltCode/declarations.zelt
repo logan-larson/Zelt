@@ -1,0 +1,7 @@
+
+w : Int;
+x : Float;
+y : String;
+z : Bool;
+
+_a : Float;

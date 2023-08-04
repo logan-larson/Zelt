@@ -7,11 +7,7 @@ options { tokenVocab=ZeltLexer; }
 // ------------------------------------- Program -----------------------------------------------
 // ---------------------------------------------------------------------------------------------
 
-program : line* EOF ;
-
-line 
-	: statement
-	;
+program : statement* EOF ;
 
 statement
 	: declarationStatement
@@ -290,7 +286,7 @@ functionIdentifier
 
 block 
 	// { x := 5; y := 3.14; }
-	: LEFT_BRACE line* RIGHT_BRACE;
+	: LEFT_BRACE statement* RIGHT_BRACE;
 
 interfaceBlock
 	// { IType add(IType x) => IType; IType square() => IType; retString() => String }

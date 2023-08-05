@@ -4,4 +4,4 @@ x : Float;
 y : String;
 z : Bool;
 
-_a : Float;
+_a : Vector2;

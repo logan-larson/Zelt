@@ -6,19 +6,28 @@ using System.Threading.Tasks;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
 using Zelt.Grammar;
-using Zelt.CompilerHelpers;
+using Zelt.AST;
 using Antlr4.Runtime.Tree;
+using Zelt.CodeGenerator;
 
 namespace Zelt.Visitors
 {
     public partial class Visitor : ZeltParserBaseVisitor<object>
     {
-        public StreamWriter HTMLStream { get; private set; }
+        public StreamWriter? HTMLStream { get; private set; }
 
         // Maybe JSStreams should be a list of streams, so we can have multiple files?
-        public StreamWriter JSStream { get; private set; }
+        public StreamWriter? JSStream { get; private set; }
 
-        public string OutputFileName;
+        public string OutputFileName { get; private set; }
+
+        // Used by REPL
+        public Visitor()
+        {
+            HTMLStream = null;
+            JSStream = null;
+            OutputFileName = "";
+        }
 
         public Visitor(StreamWriter htmlStream, StreamWriter jsStream, string outputFileName)
         {
@@ -42,16 +51,29 @@ namespace Zelt.Visitors
                                     </body>
                                 """;
 
-            HTMLStream.WriteLine(htmlOutput);
+            HTMLStream?.WriteLine(htmlOutput);
+        }
+
+        public void GenerateJavaScript()
+        {
+            if (JSStream == null)
+            {
+                ErrorHandler.ThrowError("JSStream is null, cannot generate JavaScript code.");
+                return;
+            }
+
+            JavaScriptCodeGenerator generator = new JavaScriptCodeGenerator(JSStream);
+            
+            generator.GenerateCodeForAST(Root);
         }
 
         private void WriteMain()
         {
-            JSStream.WriteLine("window.onload = function() {");
+            JSStream?.WriteLine("window.onload = function() {");
 
             // Main body
 
-            JSStream.WriteLine("};");
+            JSStream?.WriteLine("};");
         }
     }
 }

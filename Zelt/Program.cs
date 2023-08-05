@@ -51,6 +51,8 @@ class Program
 
     static void CompileFiles(string[] args)
     {
+        TimeOnly startTime = TimeOnly.FromDateTime(DateTime.Now);
+
         // TODO: figure out how to handle multiple files
         // Main file? Specify a main function?
 
@@ -69,10 +71,6 @@ class Program
         string outputJSFilePath = outputFileName + ".js";
         string outputHTMLFilePath = outputFileName + ".html";
 
-        // Write the HTML file, this will be static for now
-        // If we allow the user to access members of the DOM then it will need to be dynamic
-        {
-        }
 
         using (StreamWriter htmlStream = new StreamWriter(outputHTMLFilePath))
         using (StreamWriter jsStream = new StreamWriter(outputJSFilePath))
@@ -87,6 +85,15 @@ class Program
 
             // Type-checking
             visitor.CheckVariableDeclarationTypes();
+
+            // Generate JavaScript
+            visitor.GenerateJavaScript();
         }
+
+        TimeOnly endTime = TimeOnly.FromDateTime(DateTime.Now);
+
+        Console.WriteLine("Compiled successfully!");
+        Console.WriteLine($"Output files: {outputHTMLFilePath}, {outputJSFilePath}");
+        Console.WriteLine($"Compilation duration: {endTime - startTime}");
     }
 }

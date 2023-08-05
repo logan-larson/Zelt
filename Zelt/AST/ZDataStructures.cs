@@ -4,24 +4,45 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Zelt.CompilerHelpers
+namespace Zelt.AST
 {
-    public interface ICodeGen
+    public class ZAST
     {
-        void CodeGen(StreamWriter stream);
+        // TODO: This is wrong, but good for now
+        /*
+        public List<ZVariable> Variables;
+        public List<ZFunction> Functions;
+        public List<ZStruct> Structs;
+        public List<ZInterface> Interfaces;
+        */
+
+        public List<IZStatement> Statements;
+
+        public ZAST()
+        {
+            Statements = new List<IZStatement>();
+            /*
+            Variables = new List<ZVariable>();
+            Functions = new List<ZFunction>();
+            Structs = new List<ZStruct>();
+            Interfaces = new List<ZInterface>();
+            */
+        }
     }
 
     public class ZType
     {
         public string Name;
+        public List<ZType> ParentTypes;
         public bool IsDefined;
-        public List<ZInterface> Interfaces;
+        //public List<ZInterface> Interfaces;
 
-        public ZType(string name, bool isDefined = false)
+        public ZType(string name, List<ZType>? parentTypes, bool isDefined = false)
         {
             Name = name;
+            ParentTypes = parentTypes ?? new List<ZType>();
             IsDefined = isDefined;
-            Interfaces = new List<ZInterface>();
+            //Interfaces = new List<ZInterface>();
         }
     }
 
@@ -37,7 +58,7 @@ namespace Zelt.CompilerHelpers
         }
     }
 
-    public class ZStruct : ICodeGen
+    public class ZStruct
     {
         public string Name;
         public List<ZVariable> Variables;
@@ -54,22 +75,9 @@ namespace Zelt.CompilerHelpers
             Interfaces = new List<ZInterface>();
             Constructor = new ZFunction();
         }
-
-        public void CodeGen(StreamWriter stream)
-        {
-            string variables = string.Join(", ", this.Variables.Select(v => v.Name));
-
-            stream.WriteLine($"class {this.Name} {{");
-            stream.WriteLine($"\tconstructor({variables}) {{");
-            foreach (var variable in this.Variables)
-            {
-                stream.WriteLine($"\t\tthis.{variable.Name} = {variable.Value};");
-            }
-            stream.WriteLine("\t}\n}");
-        }
     }
 
-    public class ZStructInstance : ICodeGen
+    public class ZStructInstance
     {
         public List<ZVariable> Variables;
 
@@ -80,16 +88,6 @@ namespace Zelt.CompilerHelpers
         {
             Variables = new List<ZVariable>();
             Name = name;
-        }
-
-        public void CodeGen(StreamWriter stream)
-        {
-            stream.WriteLine($"new {this.Name}() {{");
-            foreach (var variable in this.Variables)
-            {
-                stream.WriteLine($"\tthis.{variable.Name} = {variable.Value};");
-            }
-            stream.WriteLine("}");
         }
     }
 
@@ -133,7 +131,7 @@ namespace Zelt.CompilerHelpers
         }
     }
 
-    public class ZFunction : ICodeGen
+    public class ZFunction
     {
         public ZVariable CallerName;
         public string Name;
@@ -143,30 +141,14 @@ namespace Zelt.CompilerHelpers
 
         public ZFunction()
         {
+            throw new NotImplementedException();
+            /*
             CallerName = new ZVariable();
             Name = "";
             ParameterValues = new List<ZParameterValue>();
             ReturnValues = new List<ZReturnValue>();
             Body = new List<IZStatement>();
-        }
-
-        public void CodeGen(StreamWriter stream)
-        {
-            List<string> parameterValues = ParameterValues.OrderBy(p => p.Position).Select(p => p.Name).ToList();
-
-            if (CallerName.IsDefined)
-            {
-                parameterValues.Insert(0, CallerName.Name);
-            }
-
-            string parameters = string.Join(", ", parameterValues);
-
-            stream.WriteLine($"function {this.Name}({parameters}) {{");
-            foreach (var statement in this.Body)
-            {
-                statement.CodeGen(stream);
-            }
-            stream.WriteLine("}");
+            */
         }
     }
 
@@ -178,18 +160,15 @@ namespace Zelt.CompilerHelpers
         {
             Struct = zStruct;
         }
+    }
 
-        public void CodeGen(StreamWriter stream)
+    public class ZDeclaration
+    {
+        public ZVariable Variable;
+
+        public ZDeclaration(ZVariable variable)
         {
-            throw new NotImplementedException();
-            /*
-            stream.WriteLine($"constructor ({this.Struct.Variables.}) {{");
-                   foreach (var statement in this.Body)
-            {
-                statement.CodeGen(stream);
-            }
-            stream.WriteLine("}");
-            */
+            Variable = variable;
         }
     }
 
@@ -203,78 +182,58 @@ namespace Zelt.CompilerHelpers
         public int Line { get; set; }
         public int Column { get; set; }
 
-        public ZVariable(string name, ZType type, ZValue value, bool isDefined = false)
+        public ZVariable(string name, ZType type, ZValue? value, bool isDefined = false)
         {
             Name = name;
-            IsDefined = isDefined;
             Type = type;
-            Value = value;
-        }
-
-        public ZVariable()
-        {
-            Name = "";
-            IsDefined = false;
-            Type = new ZType("");
-            Value = new ZValue("");
-        }
-
-        public void CodeGen(StreamWriter stream)
-        {
-            //stream.WriteLine($"var {this.Name} = {this.Value};");
-            throw new NotImplementedException();
+            Value = value ?? new ZValue((object?)null, new ZType("Null", null, true));
+            IsDefined = isDefined;
         }
     }
 
     public class ZValue
     {
-        public int? intValue;
-        public float? floatValue;
-        public string? stringValue;
-        public bool? boolValue;
+        public ZType Type;
 
-        public ZValue(int value)
+        public int? IntValue;
+        public float? FloatValue;
+        public string? StringValue;
+        public bool? BoolValue;
+        public ZList? ListValue;
+
+        public ZValue(int value, ZType type)
         {
-            intValue = value;
+            IntValue = value;
+            Type = type;
         }
 
-        public ZValue(float value)
+        public ZValue(float value, ZType type)
         {
-            floatValue = value;
+            FloatValue = value;
+            Type = type;
         }
 
-        public ZValue(string value)
+        public ZValue(string value, ZType type)
         {
-            stringValue = value;
+            StringValue = value;
+            Type = type;
         }
 
-        public ZValue(bool value)
+        public ZValue(bool value, ZType type)
         {
-            boolValue = value;
+            BoolValue = value;
+            Type = type;
         }
 
-        public void CodeGen(StreamWriter stream)
+        public ZValue(ZList value, ZType type)
         {
-            if (intValue.HasValue)
-            {
-                stream.Write(intValue.Value);
-            }
-            else if (floatValue.HasValue)
-            {
-                stream.Write(floatValue.Value);
-            }
-            else if (stringValue is not null)
-            {
-                stream.Write($"\"{stringValue}\"");
-            }
-            else if (boolValue.HasValue)
-            {
-                stream.Write(boolValue.Value);
-            }
-            else
-            {
-                throw new Exception("Invalid value");
-            }
+            ListValue = value;
+            Type = type;
+        }
+
+        public ZValue(object? _, ZType type) // Nulls??
+        {
+            Type = type;
         }
     }
 
@@ -292,11 +251,6 @@ namespace Zelt.CompilerHelpers
             Value = value;
             Position = position;
         }
-
-        public void CodeGen(StreamWriter stream)
-        {
-            stream.Write($"{this.Name}");
-        }
     }
 
     public class ZReturnValue
@@ -311,16 +265,21 @@ namespace Zelt.CompilerHelpers
             Value = value;
             Position = position;
         }
-
-        public void CodeGen(StreamWriter stream)
-        {
-            stream.Write($"{this.Value}");
-        }
     }
 
     // -- Statements --
 
-    public interface IZStatement : ICodeGen { }
+    public interface IZStatement { }
+
+    public class ZDeclarationStatement : IZStatement
+    {
+        public List<ZDeclaration> Declarations;
+
+        public ZDeclarationStatement(List<ZDeclaration> declarations)
+        {
+            Declarations = declarations;
+        }
+    }
 
     public class ZWhileStatement : IZStatement
     {
@@ -331,11 +290,6 @@ namespace Zelt.CompilerHelpers
         {
             Condition = condition;
             Body = body;
-        }
-
-        public void CodeGen(StreamWriter streamWriter)
-        {             
-            throw new NotImplementedException();
         }
     }
 
@@ -350,11 +304,6 @@ namespace Zelt.CompilerHelpers
             Condition = condition;
             TrueBody = trueBody;
             FalseBody = falseBody;
-        }
-
-        public void CodeGen(StreamWriter streamWriter)
-        {             
-            throw new NotImplementedException();
         }
     }
 
@@ -371,11 +320,6 @@ namespace Zelt.CompilerHelpers
             ListToIterate = listToIterate;
             Body = body;
         }
-
-        public void CodeGen(StreamWriter streamWriter)
-        {             
-            throw new NotImplementedException();
-        }
     }
 
     public class ZList
@@ -388,31 +332,7 @@ namespace Zelt.CompilerHelpers
             Type = type;
             Values = values;
         }
-
-        public void CodeGen(StreamWriter streamWriter)
-        {
-            throw new NotImplementedException();
-        }
     }
-
-    public class ZExpression
-    {
-        public ZType Type;
-        public ZValue Value;
-
-        public ZExpression(ZType type, ZValue value)
-        {
-            Type = type;
-            Value = value;
-        }
-
-        public void CodeGen(StreamWriter streamWriter)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-
 
 
     public interface IZDeclarationMetaData

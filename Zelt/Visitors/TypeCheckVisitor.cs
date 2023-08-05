@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
 using Zelt.Grammar;
-using Zelt.CompilerHelpers;
+using Zelt.AST;
 using Antlr4.Runtime.Tree;
 
 namespace Zelt.Visitors
@@ -19,7 +19,7 @@ namespace Zelt.Visitors
             {
                 if (!variable.Value.Type.IsDefined)
                 {
-                    ThrowError($"Variable '{variable.Value.Name}' type '{variable.Value.Type.Name}' was not defined.", variable.Value.Line, variable.Value.Column);
+                    ErrorHandler.ThrowError($"Variable '{variable.Value.Name}' type '{variable.Value.Type.Name}' was not defined.", variable.Value.Line, variable.Value.Column);
                 }
             }
         }

@@ -21,7 +21,7 @@ class Program
         }
         else
         {
-            InterpretFiles(args);
+            CompileFiles(args);
         }
     }
 
@@ -49,48 +49,44 @@ class Program
         }
     }
 
-    static void InterpretFiles(string[] args)
+    static void CompileFiles(string[] args)
     {
         // TODO: figure out how to handle multiple files
         // Main file? Specify a main function?
-        var tokens = false;
 
         var fileContents = File.ReadAllText(args[0]);
 
         AntlrInputStream inputStream = new AntlrInputStream(fileContents);
         ZeltLexer lexer = new ZeltLexer(inputStream);
         CommonTokenStream commonTokenStream = new CommonTokenStream(lexer);
+        ZeltParser parser = new ZeltParser(commonTokenStream);
+        parser.AddErrorListener(new ErrorListener());
 
-        if (tokens)
+        // Eventually will need to handle multiple files
+
+        string outputFileName = args.Length > 1 ? args[1] : "output";
+
+        string outputJSFilePath = outputFileName + ".js";
+        string outputHTMLFilePath = outputFileName + ".html";
+
+        // Write the HTML file, this will be static for now
+        // If we allow the user to access members of the DOM then it will need to be dynamic
         {
-            commonTokenStream.Fill();
-
-            foreach (var token in commonTokenStream.GetTokens())
-            {
-                Console.WriteLine(token);
-            }
         }
-        else
-        {
-            ZeltParser parser = new ZeltParser(commonTokenStream);
-            parser.AddErrorListener(new ErrorListener());
-            var visitor = new Visitor();
 
-            // AST traversal
+        using (StreamWriter htmlStream = new StreamWriter(outputHTMLFilePath))
+        using (StreamWriter jsStream = new StreamWriter(outputJSFilePath))
+        {
+            var visitor = new Visitor(htmlStream, jsStream, outputFileName);
+
+            // Generate static HTML
+            visitor.GenerateStaticHTML();
+
+            // Write output while parsing
             visitor.Visit(parser.program());
 
             // Type-checking
             visitor.CheckVariableDeclarationTypes();
-
-            // Code generation
-            if (args.Length > 1)
-            {
-                visitor.WriteOutputFile(args[1]);
-            }
-            else
-            {
-                visitor.WriteOutputFile("out");
-            }
         }
     }
 }

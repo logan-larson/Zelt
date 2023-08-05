@@ -13,61 +13,45 @@ namespace Zelt.Visitors
 {
     public partial class Visitor : ZeltParserBaseVisitor<object>
     {
-        public void WriteOutputFile(string outputFileName)
+        public StreamWriter HTMLStream { get; private set; }
+
+        // Maybe JSStreams should be a list of streams, so we can have multiple files?
+        public StreamWriter JSStream { get; private set; }
+
+        public string OutputFileName;
+
+        public Visitor(StreamWriter htmlStream, StreamWriter jsStream, string outputFileName)
         {
-            string outputJSFilePath;
-            string outputHTMLFilePath;
-            if (outputFileName == null)
-            {
-                outputFileName = "output";
-                outputJSFilePath = outputFileName + ".js";
-                outputHTMLFilePath = outputFileName + ".html";
-            }
-            else
-            {
-                outputJSFilePath = outputFileName + ".js";
-                outputHTMLFilePath = outputFileName + ".html";
-            }
-
-            using (StreamWriter outputFile = new StreamWriter(outputHTMLFilePath))
-            {
-                string htmlOutput = $"""
-                                        <!DOCTYPE html>
-                                        <html lang="en">
-                                        <head>
-                                            <meta charset=""UTF-8"">
-                                            <title>Zelt Runtime LOL</title>
-                                            <script src="{outputFileName}.js"></script>
-                                        </head>
-                                        <body>
-                                        </body>
-                                    """;
-                outputFile.WriteLine(htmlOutput);
-            }
-
-            using (StreamWriter outputFile = new StreamWriter(outputJSFilePath))
-            {
-                outputFile.WriteLine("// Zelt -> JavaScript");
-
-                WriteVariables(outputFile);
-
-                WriteMain(outputFile);
-            }
+            HTMLStream = htmlStream;
+            JSStream = jsStream;
+            OutputFileName = outputFileName;
         }
 
-        private void WriteVariables(StreamWriter outputFile)
+        public void GenerateStaticHTML()
         {
-            foreach (var variable in Variables)
-            {
-                outputFile.WriteLine($"\tvar {variable.Value.name} = '';");
-            }
+            // Static HTML generation
+            string htmlOutput = $"""
+                                    <!DOCTYPE html>
+                                    <html lang="en">
+                                    <head>
+                                        <meta charset=""UTF-8"">
+                                        <title>Zelt Runtime LOL</title>
+                                        <script src="{OutputFileName}.js"></script>
+                                    </head>
+                                    <body>
+                                    </body>
+                                """;
+
+            HTMLStream.WriteLine(htmlOutput);
         }
 
-        private void WriteMain(StreamWriter outputFile)
+        private void WriteMain()
         {
-            outputFile.WriteLine("window.onload = function() {");
+            JSStream.WriteLine("window.onload = function() {");
 
-            outputFile.WriteLine("};");
+            // Main body
+
+            JSStream.WriteLine("};");
         }
     }
 }

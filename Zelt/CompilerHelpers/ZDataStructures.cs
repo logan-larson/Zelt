@@ -57,12 +57,15 @@ namespace Zelt.CompilerHelpers
 
         public void CodeGen(StreamWriter stream)
         {
-            stream.WriteLine($"function {this.Name}() {{");
+            string variables = string.Join(", ", this.Variables.Select(v => v.Name));
+
+            stream.WriteLine($"class {this.Name} {{");
+            stream.WriteLine($"\tconstructor({variables}) {{");
             foreach (var variable in this.Variables)
             {
-                stream.WriteLine($"\tthis.{variable.Name} = {variable.Value};");
+                stream.WriteLine($"\t\tthis.{variable.Name} = {variable.Value};");
             }
-            stream.WriteLine("}");
+            stream.WriteLine("\t}\n}");
         }
     }
 
@@ -164,6 +167,29 @@ namespace Zelt.CompilerHelpers
                 statement.CodeGen(stream);
             }
             stream.WriteLine("}");
+        }
+    }
+
+    public class ZStructConstructor
+    {
+        public ZStruct Struct;
+
+        public ZStructConstructor(ZStruct zStruct)
+        {
+            Struct = zStruct;
+        }
+
+        public void CodeGen(StreamWriter stream)
+        {
+            throw new NotImplementedException();
+            /*
+            stream.WriteLine($"constructor ({this.Struct.Variables.}) {{");
+                   foreach (var statement in this.Body)
+            {
+                statement.CodeGen(stream);
+            }
+            stream.WriteLine("}");
+            */
         }
     }
 

@@ -17,9 +17,9 @@ namespace Zelt.Visitors
         {
             foreach (var variable in Variables)
             {
-                if (!variable.Value.type.isDefined)
+                if (!variable.Value.Type.IsDefined)
                 {
-                    ThrowError($"Variable '{variable.Value.name}' type '{variable.Value.type.name}' was not defined.", variable.Value.Line, variable.Value.Column);
+                    ThrowError($"Variable '{variable.Value.Name}' type '{variable.Value.Type.Name}' was not defined.", variable.Value.Line, variable.Value.Column);
                 }
             }
         }

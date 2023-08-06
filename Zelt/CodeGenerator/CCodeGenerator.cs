@@ -31,17 +31,22 @@ namespace Zelt.CodeGenerator
             throw new NotImplementedException();
         }
 
+        public void GenerateCodeForAssignmentStatement(ZAssignmentStatement statement)
+        {
+            throw new NotImplementedException();
+        }
+
         public void GenerateCodeForDeclaration(ZDeclaration declaration)
         {
             throw new NotImplementedException();
         }
 
-        public void GenerateCodeForAssignment(ZVariable variable, ZExpression expression)
+        public void GenerateCodeForAssignment(ZAssignment assignment)
         {
             throw new NotImplementedException();
         }
 
-        public void GenerateCodeForExpression(ZExpression expression)
+        public void GenerateCodeForExpression(IZExpression expression)
         {
             throw new NotImplementedException();
         }

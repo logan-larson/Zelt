@@ -9,34 +9,36 @@ using Zelt.Grammar;
 
 namespace Zelt.Visitors
 {
-    public class ExpressionVisitor : ZeltParserBaseVisitor<ZExpression>
+    public class ExpressionVisitor : ZeltParserBaseVisitor<IZExpression>
     {
         public Dictionary<string, ZType> Types { get; private set; }
+        public string[] SourceCodeLines { get; private set; }
 
         // Caller passes in the currently referenced types (not defined, some could not be defined yet)
-        public ExpressionVisitor(Dictionary<string, ZType> types)
+        public ExpressionVisitor(Dictionary<string, ZType> types, string[] sourceCodeLines)
         {
             Types = types;
+            SourceCodeLines = sourceCodeLines;
         }
 
-        public override ZExpression VisitLiteralExpression([NotNull] ZeltParser.LiteralExpressionContext context)
+        public override IZExpression VisitLiteralExpression([NotNull] ZeltParser.LiteralExpressionContext context)
         {
-            return new LiteralVisitor(Types).VisitLiteral(context.literal());
+            return new LiteralVisitor(Types, SourceCodeLines).VisitLiteral(context.literal());
         }
 
-        public override ZExpression VisitListExpression([NotNull] ZeltParser.ListExpressionContext context)
+        public override IZExpression VisitListExpression([NotNull] ZeltParser.ListExpressionContext context)
         {
             return base.VisitListExpression(context);
         }
 
-        public override ZExpression VisitIdentifierExpression([NotNull] ZeltParser.IdentifierExpressionContext context)
+        public override IZExpression VisitIdentifierExpression([NotNull] ZeltParser.IdentifierExpressionContext context)
         {
             string name = context.IDENTIFIER().GetText();
 
             if (!Types.ContainsKey(name))
             {
                 // Type does not exist
-                ErrorHandler.ThrowError($"Type '{name}' does not exist.", context.Start.Line, context.Start.Column);
+                ErrorHandler.ThrowError($"Type '{name}' does not exist.", context.Start.Line, context.Start.Column, SourceCodeLines);
             }
 
             return new ZIdentifierExpression(name, Types[name]);

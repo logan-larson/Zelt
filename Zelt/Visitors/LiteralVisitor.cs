@@ -9,17 +9,20 @@ using Zelt.Grammar;
 
 namespace Zelt.Visitors
 {
-    public class LiteralVisitor : ZeltParserBaseVisitor<ZExpression>
+    public class LiteralVisitor : ZeltParserBaseVisitor<IZExpression>
     {
         public Dictionary<string, ZType> Types { get; private set; }
 
+        public string[] SourceCodeLines { get; private set; }
+
         // Caller passes in the currently referenced types (not defined, some could not be defined yet)
-        public LiteralVisitor(Dictionary<string, ZType> types)
+        public LiteralVisitor(Dictionary<string, ZType> types, string[] sourceCodeLines)
         {
             Types = types;
+            SourceCodeLines = sourceCodeLines;
         }
 
-        public override ZExpression VisitLiteral([NotNull] ZeltParser.LiteralContext context)
+        public override IZExpression VisitLiteral([NotNull] ZeltParser.LiteralContext context)
         {
             if (context.INTEGER() != null)
             {
@@ -45,9 +48,9 @@ namespace Zelt.Visitors
             throw new NotImplementedException();
         }
 
-        public override ZExpression VisitList([NotNull] ZeltParser.ListContext context)
+        public override IZExpression VisitList([NotNull] ZeltParser.ListContext context)
         {
-            List<ZExpression> values = new List<ZExpression>();
+            List<IZExpression> values = new List<IZExpression>();
 
             foreach (var value in context.listElement())
             {
@@ -63,7 +66,7 @@ namespace Zelt.Visitors
                     }
                     else
                     {
-                        values.Add(new ExpressionVisitor(Types).VisitExpression(value.expression()[0]));
+                        values.Add(new ExpressionVisitor(Types, SourceCodeLines).VisitExpression(value.expression()[0]));
                     }
                 }
                 else

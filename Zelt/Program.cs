@@ -58,6 +58,9 @@ class Program
 
         var fileContents = File.ReadAllText(args[0]);
 
+        // Someday, we'll need to handle multiple files
+        string[] sourceCodeLines = File.ReadAllLines(args[0]);
+
         AntlrInputStream inputStream = new AntlrInputStream(fileContents);
         ZeltLexer lexer = new ZeltLexer(inputStream);
         CommonTokenStream commonTokenStream = new CommonTokenStream(lexer);
@@ -75,7 +78,7 @@ class Program
         using (StreamWriter htmlStream = new StreamWriter(outputHTMLFilePath))
         using (StreamWriter jsStream = new StreamWriter(outputJSFilePath))
         {
-            var visitor = new Visitor(htmlStream, jsStream, outputFileName);
+            var visitor = new Visitor(htmlStream, jsStream, outputFileName, sourceCodeLines);
 
             // Generate static HTML
             visitor.GenerateStaticHTML();

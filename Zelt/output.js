@@ -1,5 +1,1 @@
-let w;
-let x;
-let y;
-let z;
-let _a;
+let floatExpr = (1-((2*3)/4));

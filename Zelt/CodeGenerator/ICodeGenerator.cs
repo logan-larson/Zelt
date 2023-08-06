@@ -23,12 +23,14 @@ namespace Zelt.CodeGenerator
         void GenerateCodeForStatement(IZStatement statement);
 
         void GenerateCodeForDeclarationStatement(ZDeclarationStatement statement);
+        
+        void GenerateCodeForAssignmentStatement(ZAssignmentStatement statement);
 
         void GenerateCodeForDeclaration(ZDeclaration declaration);
 
-        void GenerateCodeForAssignment(ZVariable variable, ZExpression expression);
+        void GenerateCodeForAssignment(ZAssignment assignment);
 
-        void GenerateCodeForExpression(ZExpression expression);
+        void GenerateCodeForExpression(IZExpression expression);
 
         void GenerateCodeForLiteral(ZLiteralExpression literal);
 

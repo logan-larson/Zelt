@@ -1,0 +1,13 @@
+
+v : Int;
+
+w : Int = 5 + 7;
+x : Float = 10.3;
+y : String = "Hello" + "World";
+z : Bool = true;
+
+boolExpr : Bool = true || (false && (1 < 2));
+
+floatExpr : Float = 1.0 + 2.0 * 3.0 / 4.0;
+
+/*_a : Vector2;*/

@@ -18,6 +18,10 @@ namespace Zelt.AST
 
         public List<IZStatement> Statements;
 
+        // Pass in the source files so we can get the source code for error messages
+        // There might be a better way to do this
+        // Key: file name, Value: lines of code
+
         public ZAST()
         {
             Statements = new List<IZStatement>();
@@ -30,31 +34,167 @@ namespace Zelt.AST
         }
     }
 
-    public class ZType
+    public class ZType : IComparable<ZType>
     {
         public string Name;
         public List<ZType> ParentTypes;
+        public List<ZInterface> Interfaces;
         public bool IsDefined;
-        //public List<ZInterface> Interfaces;
 
-        public ZType(string name, List<ZType>? parentTypes, bool isDefined = false)
+        public ZType(string name, List<ZType>? parentTypes, List<ZInterface>? interfaces, bool isDefined = false)
         {
             Name = name;
             ParentTypes = parentTypes ?? new List<ZType>();
+            Interfaces = interfaces ?? new List<ZInterface>();
             IsDefined = isDefined;
-            //Interfaces = new List<ZInterface>();
+        }
+
+        // Primitive types
+        public static ZType Int = new ZType("Int", null, new List<ZInterface>()
+        {
+            ZInterface.Multiplicative,
+            ZInterface.Divisive,
+            ZInterface.Modulable,
+            ZInterface.Additive,
+            ZInterface.Subtractive,
+            ZInterface.Comparable,
+            ZInterface.Equatable,
+        }, true);
+
+        public static ZType Float = new ZType("Float", null, new List<ZInterface>()
+        {
+            ZInterface.Multiplicative,
+            ZInterface.Divisive,
+            ZInterface.Modulable,
+            ZInterface.Additive,
+            ZInterface.Subtractive,
+            ZInterface.Comparable,
+            ZInterface.Equatable,
+        }, true);
+
+        public static ZType String = new ZType("String", null, new List<ZInterface>()
+        {
+            ZInterface.Additive,
+            ZInterface.Comparable,
+            ZInterface.Equatable,
+        }, true);
+        public static ZType Bool = new ZType("Bool", null, new List<ZInterface>()
+        {
+            ZInterface.Equatable,
+            ZInterface.Negatable,
+        }, true);
+        public static ZType Null = new ZType("Null", null, null, true);
+        /*
+        public static ZType Void = new ZType("void", null, true);
+        public static ZType Char = new ZType("char", null, true);
+        public static ZType Any = new ZType("any", null, true);
+        */
+
+        public int CompareTo(ZType? other)
+        {
+            if (other == null)
+            {
+                return -1;
+            }
+
+            if (Name == other.Name)
+            {
+                return 0;
+            }
+
+            // IDK what this does
+            if (ParentTypes.Contains(other))
+            {
+                return 1;
+            }
+
+            return -1;
+        }
+
+        public bool Implements(ZInterface other)
+        {
+            // If the type implements the interface directly
+            if (Interfaces.Contains(other))
+            {
+                return true;
+            }
+
+            // If the type implements the interface through one of its interfaces' parent interfaces
+            foreach (var i in Interfaces)
+            {
+                if (i.Implements(other))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 
-    public class ZInterface
+    public class ZInterface : IComparable<ZInterface>
     {
         public string Name;
         public List<ZFunctionSignature> FunctionSignatures;
-        
+
+        // Don't know if I will have interfaces inherit from other interfaces in the future
+        public List<ZInterface> ParentInterfaces;        
+
         public ZInterface(string name)
         {
             Name = name;
             FunctionSignatures = new List<ZFunctionSignature>();
+            ParentInterfaces = new List<ZInterface>();
+        }
+
+        public static ZInterface Multiplicative = new ZInterface("Multiplicative"); // *
+        public static ZInterface Divisive = new ZInterface("Divisive"); // /
+        public static ZInterface Modulable = new ZInterface("Modulable"); // %
+        public static ZInterface Additive = new ZInterface("Additive"); // +
+        public static ZInterface Subtractive = new ZInterface("Subtractive"); // -
+        public static ZInterface Comparable = new ZInterface("Comparable"); // <, >, <=, >=
+        public static ZInterface Equatable = new ZInterface("Equatable"); // == and !=
+        public static ZInterface Negatable = new ZInterface("Negatable"); // !
+
+        public int CompareTo(ZInterface? other)
+        {
+            if (other == null)
+            {
+                return -1;
+            }
+
+            if (Name == other.Name)
+            {
+                return 0;
+            }
+
+            // IDK what this does
+            if (ParentInterfaces.Contains(other))
+            {
+                return 1;
+            }
+
+            return -1;
+        }
+
+        public bool Implements(ZInterface other)
+        {
+            // If this interface directly implements the other interface
+            if (ParentInterfaces.Contains(other))
+            {
+                return true;
+            }
+
+            // If this interface implements the other interface through one of its parent interfaces
+            foreach (var parentInterface in ParentInterfaces)
+            {
+                if (parentInterface.Implements(other))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 
@@ -177,16 +317,14 @@ namespace Zelt.AST
         public string Name;
         public bool IsDefined;
         public ZType Type;
-        public ZValue Value;
 
         public int Line { get; set; }
         public int Column { get; set; }
 
-        public ZVariable(string name, ZType type, ZValue? value, bool isDefined = false)
+        public ZVariable(string name, ZType type, bool isDefined = false)
         {
             Name = name;
             Type = type;
-            Value = value ?? new ZValue((object?)null, new ZType("Null", null, true));
             IsDefined = isDefined;
         }
     }
@@ -267,6 +405,20 @@ namespace Zelt.AST
         }
     }
 
+    public class ZAssignment
+    {
+        public ZVariable Variable;
+        public IZExpression Expression;
+        public bool IsDeclaration;
+
+        public ZAssignment(ZVariable variable, IZExpression expression, bool isDeclaration)
+        {
+            Variable = variable;
+            Expression = expression;
+            IsDeclaration = isDeclaration;
+        }
+    }
+
     // -- Statements --
 
     public interface IZStatement { }
@@ -281,12 +433,22 @@ namespace Zelt.AST
         }
     }
 
+    public class ZAssignmentStatement : IZStatement
+    {
+        public List<ZAssignment> Assignments;
+
+        public ZAssignmentStatement(List<ZAssignment> assignments)
+        {
+            Assignments = assignments;
+        }
+    }
+
     public class ZWhileStatement : IZStatement
     {
-        public ZExpression Condition;
+        public IZExpression Condition;
         public List<IZStatement> Body;
 
-        public ZWhileStatement(ZExpression condition, List<IZStatement> body)
+        public ZWhileStatement(IZExpression condition, List<IZStatement> body)
         {
             Condition = condition;
             Body = body;
@@ -295,11 +457,11 @@ namespace Zelt.AST
 
     public class ZIfStatement : IZStatement
     {
-        public ZExpression Condition;
+        public IZExpression Condition;
         public List<IZStatement> TrueBody;
         public List<IZStatement> FalseBody;
 
-        public ZIfStatement(ZExpression condition, List<IZStatement> trueBody, List<IZStatement> falseBody)
+        public ZIfStatement(IZExpression condition, List<IZStatement> trueBody, List<IZStatement> falseBody)
         {
             Condition = condition;
             TrueBody = trueBody;
@@ -325,9 +487,9 @@ namespace Zelt.AST
     public class ZList
     {
         public ZType Type;
-        public List<ZExpression> Values;
+        public List<IZExpression> Values;
 
-        public ZList(ZType type, List<ZExpression> values)
+        public ZList(ZType type, List<IZExpression> values)
         {
             Type = type;
             Values = values;

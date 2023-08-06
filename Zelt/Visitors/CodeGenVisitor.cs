@@ -21,19 +21,23 @@ namespace Zelt.Visitors
 
         public string OutputFileName { get; private set; }
 
+        public string[] SourceCodeLines { get; private set; }
+
         // Used by REPL
         public Visitor()
         {
             HTMLStream = null;
             JSStream = null;
             OutputFileName = "";
+            SourceCodeLines = new string[0];
         }
 
-        public Visitor(StreamWriter htmlStream, StreamWriter jsStream, string outputFileName)
+        public Visitor(StreamWriter htmlStream, StreamWriter jsStream, string outputFileName, string[] sourceCodeLines)
         {
             HTMLStream = htmlStream;
             JSStream = jsStream;
             OutputFileName = outputFileName;
+            SourceCodeLines = sourceCodeLines;
         }
 
         public void GenerateStaticHTML()

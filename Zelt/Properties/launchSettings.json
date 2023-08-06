@@ -2,7 +2,7 @@
   "profiles": {
     "Zelt": {
       "commandName": "Project",
-      "commandLineArgs": "ZeltCode\\declarations.zelt"
+      "commandLineArgs": "ZeltCode\\quickTest.zelt"
     }
   }
 }

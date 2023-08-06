@@ -15,9 +15,16 @@ namespace Zelt.AST
             Environment.Exit(1);
         }
 
-        public static void ThrowError(string message, int line, int column)
+        public static void ThrowError(
+            string message,
+            int line,
+            int column,
+            string[] sourceCodeLines
+        )
         {
-            string errorPrefix = $"Error :: Line = {line}, Position = {column}\n\n";
+            string lineOfCode = sourceCodeLines[line - 1];
+            string errorPointer = new string(' ', column) + "^";
+            string errorPrefix = $"Error :: Line = {line}, Position = {column}\n{lineOfCode}\n{errorPointer}\n\n";
             Console.WriteLine(errorPrefix + message + "\n");
             Environment.Exit(1);
         }

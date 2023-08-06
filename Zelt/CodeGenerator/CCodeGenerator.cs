@@ -16,7 +16,7 @@ namespace Zelt.CodeGenerator
             Stream = stream;
         }
 
-        public void GenerateCodeForAST(ZAST ast)
+        public void GenerateCodeForProgram(ZProgram ast)
         {
             throw new NotImplementedException();
         }

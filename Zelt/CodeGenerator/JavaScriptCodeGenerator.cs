@@ -38,9 +38,14 @@ namespace Zelt.CodeGenerator
             Stream = stream;
         }
 
-        public void GenerateCodeForAST(ZAST ast)
+        public void GenerateCodeForProgram(ZProgram program)
         {
-            foreach (var statement in ast.Statements)
+            if (Stream is null)
+            {
+                ErrorHandler.ThrowError("JSStream is null, cannot generate JavaScript code.");
+            }
+
+            foreach (var statement in program.Statements)
             {
                 GenerateCodeForStatement(statement);
             }

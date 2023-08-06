@@ -14,7 +14,7 @@ using System.ComponentModel.Design;
 
 namespace Zelt.Visitors
 {
-    public partial class Visitor : ZeltParserBaseVisitor<object>
+    public partial class StatementVisitor : ZeltParserBaseVisitor<IZStatement>
     {
 
         public Dictionary<string, ZType> Types { get; private set; } = new Dictionary<string, ZType>()
@@ -33,15 +33,28 @@ namespace Zelt.Visitors
         public Dictionary<string, ZStruct> Structs { get; private set; } = new Dictionary<string, ZStruct>();
         public Dictionary<string, ZStructInstance> StructInstances { get; private set; } = new Dictionary<string, ZStructInstance>();
 
+        public string[] SourceCodeLines { get; private set; }
 
-        public ZAST Root { get; private set; } = new ZAST();
-
+        public StatementVisitor(
+            Dictionary<string, ZType> types,
+            Dictionary<string, ZVariable> variables,
+            Dictionary<string, ZFunction> functions,
+            Dictionary<string, ZStruct> structs,
+            Dictionary<string, ZStructInstance> structInstances, 
+            string[] sourceCodeLines
+        )
+        {
+            Types = types;
+            Variables = variables;
+            Functions = functions;
+            Structs = structs;
+            StructInstances = structInstances;
+            SourceCodeLines = sourceCodeLines;
+        }
 
         public override ZDeclarationStatement VisitDeclarationStatement([NotNull] ZeltParser.DeclarationStatementContext context)
         {
             List<ZDeclaration> declarations = new DeclarationVisitor(Types, Variables, SourceCodeLines).VisitDeclaration(context.declaration());
-
-            Root.Statements.Add(new ZDeclarationStatement(declarations));
 
             return new ZDeclarationStatement(declarations);
         }
@@ -62,8 +75,6 @@ namespace Zelt.Visitors
                     Variables[assignment.Variable.Name] = assignment.Variable;
                 }
 
-                Root.Statements.Add(new ZAssignmentStatement(assignments));
-
                 return new ZAssignmentStatement(assignments);
             }
             else if (context.inferAssignment() != null)
@@ -76,15 +87,11 @@ namespace Zelt.Visitors
                     Variables[assignment.Variable.Name] = assignment.Variable;
                 }
 
-                Root.Statements.Add(new ZAssignmentStatement(assignments));
-
                 return new ZAssignmentStatement(assignments);
             }
             else if (context.simpleAssignment() != null)
             {
                 assignments = new AssignmentVisitor(Types, Variables, SourceCodeLines).VisitSimpleAssignment(context.simpleAssignment());
-
-                Root.Statements.Add(new ZAssignmentStatement(assignments));
 
                 return new ZAssignmentStatement(assignments);
             }

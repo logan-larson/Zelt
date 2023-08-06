@@ -1,18 +1,23 @@
-﻿using System.IO;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Antlr4.Runtime;
-using Antlr4.Runtime.Misc;
-using Zelt.Grammar;
-using Zelt.AST;
-using Antlr4.Runtime.Tree;
 
-namespace Zelt.Visitors
+namespace Zelt.AST
 {
-    public partial class Visitor : ZeltParserBaseVisitor<object>
+    public class TypeChecker
     {
+        public Dictionary<string, ZVariable> Variables { get; set; }
+
+        public string[] SourceCodeLines { get; set; }
+
+        public TypeChecker(Dictionary<string, ZVariable> variables, string[] sourceCodeLines)
+        {
+            Variables = variables;
+            SourceCodeLines = sourceCodeLines;
+        }
+
         public void CheckVariableDeclarationTypes()
         {
             foreach (var variable in Variables)

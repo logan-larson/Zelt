@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Zelt.AST
 {
-    public class ZAST
+    public class ZProgram
     {
         // TODO: This is wrong, but good for now
         /*
@@ -18,11 +18,7 @@ namespace Zelt.AST
 
         public List<IZStatement> Statements;
 
-        // Pass in the source files so we can get the source code for error messages
-        // There might be a better way to do this
-        // Key: file name, Value: lines of code
-
-        public ZAST()
+        public ZProgram()
         {
             Statements = new List<IZStatement>();
             /*

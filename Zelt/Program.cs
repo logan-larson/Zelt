@@ -2,6 +2,8 @@
 using Zelt.Grammar;
 using Zelt.Visitors;
 using Zelt.Listeners;
+using Zelt.AST;
+using Zelt.CodeGenerator;
 
 namespace Zelt;
 
@@ -11,46 +13,10 @@ class Program
     {
         if (args.Length < 1 || args.Length > 2)
         {
-            Console.WriteLine("Usage: Zelt [REPL | <file>] <output>");
+            Console.WriteLine("Usage: Zelt <file> <output>");
             Environment.Exit(1);
         }
 
-        if (args[0] == "REPL")
-        {
-            ExecuteREPL();
-        }
-        else
-        {
-            CompileFiles(args);
-        }
-    }
-
-    static void ExecuteREPL()
-    {
-        var visitor = new Visitor();
-
-        Console.WriteLine("Welcome to the Zelt REPL");
-        Console.WriteLine("'quit()' to stop REPL");
-
-        while (true)
-        {
-            // TODO: figure out how to handle multiple lines
-            // Shift+Tab??
-
-            Console.Write("> ");
-            var line = Console.ReadLine();
-
-            AntlrInputStream inputStream = new AntlrInputStream(line);
-            ZeltLexer lexer = new ZeltLexer(inputStream);
-            CommonTokenStream commonTokenStream = new CommonTokenStream(lexer);
-            ZeltParser parser = new ZeltParser(commonTokenStream);
-            parser.AddErrorListener(new ErrorListener());
-            visitor.Visit(parser.statement());
-        }
-    }
-
-    static void CompileFiles(string[] args)
-    {
         TimeOnly startTime = TimeOnly.FromDateTime(DateTime.Now);
 
         // TODO: figure out how to handle multiple files
@@ -71,32 +37,27 @@ class Program
 
         string outputFileName = args.Length > 1 ? args[1] : "output";
 
-        string outputJSFilePath = outputFileName + ".js";
-        string outputHTMLFilePath = outputFileName + ".html";
+        string outputJSFile = outputFileName + ".js";
+        string outputHTMLFile = outputFileName + ".html";
 
 
-        using (StreamWriter htmlStream = new StreamWriter(outputHTMLFilePath))
-        using (StreamWriter jsStream = new StreamWriter(outputJSFilePath))
+        using (StreamWriter htmlStream = new StreamWriter(outputHTMLFile))
+        using (StreamWriter jsStream = new StreamWriter(outputJSFile))
         {
-            var visitor = new Visitor(htmlStream, jsStream, outputFileName, sourceCodeLines);
+            // Get the AST
+            ZProgram program = new ProgramVisitor(sourceCodeLines).VisitProgram(parser.program());
 
             // Generate static HTML
-            visitor.GenerateStaticHTML();
-
-            // Write output while parsing
-            visitor.Visit(parser.program());
-
-            // Type-checking
-            visitor.CheckVariableDeclarationTypes();
+            new HTMLCodeGenerator(htmlStream, outputHTMLFile).GenerateStaticHTML();
 
             // Generate JavaScript
-            visitor.GenerateJavaScript();
+            new JavaScriptCodeGenerator(jsStream).GenerateCodeForProgram(program);
         }
 
         TimeOnly endTime = TimeOnly.FromDateTime(DateTime.Now);
 
         Console.WriteLine("Compiled successfully!");
-        Console.WriteLine($"Output files: {outputHTMLFilePath}, {outputJSFilePath}");
+        Console.WriteLine($"Output files: {outputHTMLFile}, {outputJSFile}");
         Console.WriteLine($"Compilation duration: {endTime - startTime}");
     }
 }

@@ -187,7 +187,7 @@ expression
 	| expression relOp expression				#relationalExpression
 
 	// x && y, x || y
-	| expression boolOp expression				#boolOpExpression
+	| expression boolOp expression				#logicalExpression
 
 	// _  -- underscore discards the value of the expression
 	| UNDERSCORE								#underscoreExpression

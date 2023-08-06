@@ -18,7 +18,7 @@ namespace Zelt.CodeGenerator
         }
         */
 
-        void GenerateCodeForAST(ZAST ast);
+        void GenerateCodeForProgram(ZProgram ast);
 
         void GenerateCodeForStatement(IZStatement statement);
 

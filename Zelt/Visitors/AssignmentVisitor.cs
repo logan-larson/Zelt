@@ -63,7 +63,7 @@ namespace Zelt.Visitors
             List<IZExpression> expressions = new List<IZExpression>();
             foreach (var expression in context.expressionList().expression())
             {
-                expressions.Add(new ExpressionVisitor(Types, SourceCodeLines).VisitExpression(expression));
+                expressions.Add(new ExpressionVisitor(Types, Variables, SourceCodeLines).VisitExpression(expression));
             }
 
             // Check if the number of identifiers and expressions match
@@ -111,7 +111,7 @@ namespace Zelt.Visitors
             List<IZExpression> expressions = new List<IZExpression>();
             foreach (var expression in context.expressionList().expression())
             {
-                expressions.Add(new ExpressionVisitor(Types, SourceCodeLines).VisitExpression(expression));
+                expressions.Add(new ExpressionVisitor(Types, Variables, SourceCodeLines).VisitExpression(expression));
             }
 
             // Check if the number of identifiers and expressions match
@@ -159,7 +159,7 @@ namespace Zelt.Visitors
             List<IZExpression> expressions = new List<IZExpression>();
             foreach (var expression in context.expressionList().expression())
             {
-                expressions.Add(new ExpressionVisitor(Types, SourceCodeLines).VisitExpression(expression));
+                expressions.Add(new ExpressionVisitor(Types, Variables, SourceCodeLines).VisitExpression(expression));
             }
 
             // Check if the number of identifiers and expressions match

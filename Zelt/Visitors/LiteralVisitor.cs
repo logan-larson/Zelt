@@ -47,36 +47,5 @@ namespace Zelt.Visitors
 
             throw new NotImplementedException();
         }
-
-        public override IZExpression VisitList([NotNull] ZeltParser.ListContext context)
-        {
-            List<IZExpression> values = new List<IZExpression>();
-
-            foreach (var value in context.listElement())
-            {
-                if (value.DOUBLE_PERIOD() != null)
-                {
-                    // TODO: Implement range, it needs to be lazily evaluated somehow
-                }
-                else if (value.expression() != null)
-                {
-                    if (value.ChildCount > 1)
-                    {
-                        throw new NotImplementedException();
-                    }
-                    else
-                    {
-                        values.Add(new ExpressionVisitor(Types, SourceCodeLines).VisitExpression(value.expression()[0]));
-                    }
-                }
-                else
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            //return new ZValue(values, Types["List"]);
-            return base.VisitList(context);
-        }
     }
 }

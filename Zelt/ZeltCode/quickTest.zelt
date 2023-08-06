@@ -1,1 +1,4 @@
 floatExpr : Float = 1.0 - 2.0 * 3.0 / 4.0;
+
+
+intExpr, stringExpr1, stringExpr2 : Int, String, String = 1, "hello", "there";

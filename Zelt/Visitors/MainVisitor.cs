@@ -10,6 +10,7 @@ using Zelt.AST;
 using Antlr4.Runtime.Tree;
 using System.Runtime.CompilerServices;
 using System.Xml.Schema;
+using System.ComponentModel.Design;
 
 namespace Zelt.Visitors
 {
@@ -94,7 +95,11 @@ namespace Zelt.Visitors
             // Check if the number of identifiers and types match
             if (identifiers.Count != types.Count)
             {
-                ErrorHandler.ThrowError($"Uneven number of names and types\nNames: {context.identifierList().ToInfoString}\nTypes: {context.typeList().ToInfoString}", context.Start.Line, context.Start.Column, SourceCodeLines);
+                string identifiersString = string.Join(", ", identifiers);
+                List<string> typesStrings = types.Select(t => t.Name).ToList();
+                string typesString = string.Join(", ", typesStrings);
+
+                ErrorHandler.ThrowError($"Uneven number of names and types\nNames: [{identifiersString}]\nTypes: [{typesString}]", context.Start.Line, context.Start.Column, SourceCodeLines);
             }
 
             // Get the expressions
@@ -107,7 +112,11 @@ namespace Zelt.Visitors
             // Check if the number of identifiers and expressions match
             if (identifiers.Count != expressions.Count)
             {
-                ErrorHandler.ThrowError($"Uneven number of names and expressions\nNames: {context.identifierList().ToInfoString}\nExpressions: {context.expressionList().ToInfoString}", context.Start.Line, context.Start.Column, SourceCodeLines);
+                string identifiersString = string.Join(", ", identifiers);
+                List<string> expressionsStrings = expressions.Select(e => e.Type.Name).ToList();
+                string expressionsString = string.Join(", ", expressionsStrings);
+
+                ErrorHandler.ThrowError($"Uneven number of names and expressions\nNames: [{identifiersString}]\nExpression Types: [{expressionsString}]", context.Start.Line, context.Start.Column, SourceCodeLines);
             }
 
             // Create the assignments
@@ -375,7 +384,10 @@ namespace Zelt.Visitors
             // Check if the number of identifiers and types match
             if (identifiers.Count != types.Count)
             {
-                ErrorHandler.ThrowError($"Uneven number of names and types\nNames: {context.identifierList().ToInfoString}\nTypes: {context.typeList().ToInfoString}", context.Start.Line, context.Start.Column, SourceCodeLines);
+                string identifiersString = string.Join(", ", identifiers);
+                List<string> typesStrings = types.Select(t => t.Name).ToList();
+                string typesString = string.Join(", ", typesStrings);
+                ErrorHandler.ThrowError($"Uneven number of names and types\nNames: [{identifiersString}]\nTypes: [{typesString}]", context.Start.Line, context.Start.Column, SourceCodeLines);
             }
 
             List<ZDeclaration> declarations = new List<ZDeclaration>();

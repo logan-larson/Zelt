@@ -1,4 +1,5 @@
-floatExpr : Float = 1.0 - 2.0 * 3.0 / 4.0;
+a := 65;
 
+a = 3;
 
-intExpr, stringExpr1, stringExpr2 : Int, String, String = 1, "hello", "there";
+a = 30.0;

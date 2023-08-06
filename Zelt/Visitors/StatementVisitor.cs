@@ -54,7 +54,13 @@ namespace Zelt.Visitors
 
             if (context.assignment() != null)
             {
-                assignments = new AssignmentVisitor(Types, SourceCodeLines).VisitAssignment(context.assignment());
+                assignments = new AssignmentVisitor(Types, Variables, SourceCodeLines).VisitAssignment(context.assignment());
+
+                // Add assignments to the known variables
+                foreach (ZAssignment assignment in assignments)
+                {
+                    Variables[assignment.Variable.Name] = assignment.Variable;
+                }
 
                 Root.Statements.Add(new ZAssignmentStatement(assignments));
 
@@ -62,7 +68,13 @@ namespace Zelt.Visitors
             }
             else if (context.inferAssignment() != null)
             {
-                assignments = new AssignmentVisitor(Types, SourceCodeLines).VisitInferAssignment(context.inferAssignment());
+                assignments = new AssignmentVisitor(Types, Variables, SourceCodeLines).VisitInferAssignment(context.inferAssignment());
+
+                // Add assignments to the known variables
+                foreach (ZAssignment assignment in assignments)
+                {
+                    Variables[assignment.Variable.Name] = assignment.Variable;
+                }
 
                 Root.Statements.Add(new ZAssignmentStatement(assignments));
 
@@ -70,7 +82,7 @@ namespace Zelt.Visitors
             }
             else if (context.simpleAssignment() != null)
             {
-                assignments = new AssignmentVisitor(Types, SourceCodeLines).VisitSimpleAssignment(context.simpleAssignment());
+                assignments = new AssignmentVisitor(Types, Variables, SourceCodeLines).VisitSimpleAssignment(context.simpleAssignment());
 
                 Root.Statements.Add(new ZAssignmentStatement(assignments));
 

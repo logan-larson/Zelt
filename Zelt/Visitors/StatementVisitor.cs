@@ -195,7 +195,96 @@ namespace Zelt.Visitors
         // TODO: Add support for lists before adding this
         public override IZStatement VisitEachStatement([NotNull] ZeltParser.EachStatementContext context)
         {
-            return base.VisitEachStatement(context);
+            List<ZVariable> iteratingVariables = new List<ZVariable>();
+            List<IZExpression> listsToIterate = new List<IZExpression>();
+            int? expectedListLength = null;
+
+            Dictionary<string, ZVariable> eachVariables = new Dictionary<string, ZVariable>(Variables);
+
+            for (int i = 0; i < context.declarationList().declaration().Length; i++)
+            {
+                ZDeclaration iteratingVariable = new DeclarationVisitor(Types, eachVariables, SourceCodeLines).VisitDeclaration(context.declarationList().declaration(i))[0];
+                iteratingVariable.Variable.IsDefined = true;
+
+                IZExpression expression = new ExpressionVisitor(Types, eachVariables, SourceCodeLines).VisitExpression(context.expressionList().expression(i));
+
+                // TODO - INTERFACES: Eventually I should just check if the expression type implements the Iterable interface
+                if (expression is ZIdentifierExpression identifierExpression)
+                {
+                    if (identifierExpression.Type is ZListType)
+                    {
+                        listsToIterate.Add(identifierExpression);
+                    }
+                    else
+                    {
+                        ErrorHandler.ThrowError("Cannot iterate over a non-list expression", context.Start.Line, context.Start.Column, SourceCodeLines);
+                    }
+                }
+                else if (expression is ZListExpression listExpression)
+                {
+                    listsToIterate.Add(listExpression);
+                }
+                else
+                {
+                    ErrorHandler.ThrowError("Cannot iterate over a non-list expression", context.Start.Line, context.Start.Column, SourceCodeLines);
+                }
+
+                IZExpression listToIterate = listsToIterate.Last();
+
+                // This is hacky as fuck
+                ZType zType = new ZType($"[{iteratingVariable.Variable.Type.Name}]", null, null);
+
+                if (zType.CompareTo(listToIterate.Type) != 0)
+                {
+                    ErrorHandler.ThrowError("Cannot iterate over a list of type " + listToIterate.Type.Name + " with a variable of type " + iteratingVariable.Variable.Type.Name, context.Start.Line, context.Start.Column, SourceCodeLines);
+                }
+
+                if (listToIterate is ZListExpression listExpr)
+                {
+                    if (expectedListLength == null)
+                    {
+                        expectedListLength = listExpr.Elements.Count();
+                    }
+                    else if (listExpr.Elements.Count() != expectedListLength)
+                    {
+                        ErrorHandler.ThrowError("Cannot iterate over lists of different lengths", context.Start.Line, context.Start.Column, SourceCodeLines);
+                    }
+                }
+                else
+                {
+                    // TODO: Find the length of the list and make sure it is the same as the expected length
+                }
+
+                iteratingVariables.Add(iteratingVariable.Variable);
+                listsToIterate.Add(listToIterate);
+            }
+
+            // Setup the scope for the body
+            List<IZStatement> body = new List<IZStatement>();
+            Dictionary<string, ZVariable> bodyVariables = new Dictionary<string, ZVariable>(eachVariables);
+
+            /*
+            foreach (var variable in iteratingVariables)
+            {
+                bodyVariables.Add(variable.Name, variable);
+            }
+            */
+
+            StatementVisitor visitor = new StatementVisitor(Types, eachVariables, Functions, Structs, StructInstances, SourceCodeLines);
+
+            // If there is a body, visit it
+            if (context.block() != null)
+            {
+                foreach (var statement in context.block().statement())
+                {
+                    body.Add(visitor.Visit(statement));
+                }
+
+                // Type check the body -- is this necessary?
+                TypeChecker.CheckVariableDeclarationTypes(eachVariables, SourceCodeLines);
+            }
+
+            return new ZEachStatement(iteratingVariables, listsToIterate, body);
         }
     }
 }

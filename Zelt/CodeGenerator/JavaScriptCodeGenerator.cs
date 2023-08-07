@@ -70,6 +70,10 @@ namespace Zelt.CodeGenerator
             {
                 GenerateCodeForWhileStatement(whileStatement);
             }
+            else if (statement is ZEachStatement eachStatement)
+            {
+                GenerateCodeForEachStatement(eachStatement);
+            }
             /*
             else if (statement is ZExpressionStatement)
             {
@@ -144,6 +148,60 @@ namespace Zelt.CodeGenerator
             {
                 GenerateCodeForStatement(stmt);
             }
+            Stream.WriteLine("}");
+        }
+
+        public void GenerateCodeForEachStatement(ZEachStatement statement)
+        {
+            // Assuming all lists have the same size, use the first list for the loop range
+            ZListExpression? list = statement.ListsToIterate[0] as ZListExpression;
+            ZIdentifierExpression? id = statement.ListsToIterate[0] as ZIdentifierExpression;
+
+            // Create an iteration variable for index
+            string iterator = "_i";
+            Stream.Write($"for(let {iterator} = 0; {iterator} < ");
+
+            if (id != null)
+            {
+                Stream.Write(id.Name);
+            }
+            else if (list != null)
+            {
+                GenerateCodeForListExpression(list);
+            }
+
+            Stream.WriteLine($".length; {iterator}++) {{");
+
+            // Declare the iteration variables and assign the respective value from each list
+            for (int i = 0; i < statement.IteratingVariables.Count; i++)
+            {
+                ZVariable variable = statement.IteratingVariables[i];
+
+                ZListExpression? l = statement.ListsToIterate[i] as ZListExpression;
+                ZIdentifierExpression? idExpr = statement.ListsToIterate[i] as ZIdentifierExpression;
+
+                if (idExpr != null)
+                {
+                    Stream.WriteLine($"let {variable.Name} = {idExpr.Name}[{iterator}];");
+                }
+                else if (l != null)
+                {
+                    Stream.Write($"let {variable.Name} = ");
+                    GenerateCodeForListExpression(l);
+                    Stream.WriteLine($"[{iterator}];");
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+            }
+
+            // Generate code for the body of the each loop
+            foreach (IZStatement stmt in statement.Body)
+            {
+                GenerateCodeForStatement(stmt);
+            }
+
             Stream.WriteLine("}");
         }
 
@@ -236,10 +294,10 @@ namespace Zelt.CodeGenerator
         public void GenerateCodeForListExpression(ZListExpression listExpression)
         {
             Stream.Write("[");
-            for (int i = 0; i < listExpression.Expressions.Count(); i++)
+            for (int i = 0; i < listExpression.Elements.Count(); i++)
             {
-                GenerateCodeForExpression(listExpression.Expressions[i]);
-                if (i < listExpression.Expressions.Count() - 1)
+                GenerateCodeForExpression(listExpression.Elements[i]);
+                if (i < listExpression.Elements.Count() - 1)
                 {
                     Stream.Write(", ");
                 }

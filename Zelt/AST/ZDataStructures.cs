@@ -334,54 +334,6 @@ namespace Zelt.AST
         }
     }
 
-    /*
-    public class ZValue
-    {
-        public ZType Type;
-
-        public int? IntValue;
-        public float? FloatValue;
-        public string? StringValue;
-        public bool? BoolValue;
-        public ZList? ListValue;
-
-        public ZValue(int value, ZType type)
-        {
-            IntValue = value;
-            Type = type;
-        }
-
-        public ZValue(float value, ZType type)
-        {
-            FloatValue = value;
-            Type = type;
-        }
-
-        public ZValue(string value, ZType type)
-        {
-            StringValue = value;
-            Type = type;
-        }
-
-        public ZValue(bool value, ZType type)
-        {
-            BoolValue = value;
-            Type = type;
-        }
-
-        public ZValue(ZList value, ZType type)
-        {
-            ListValue = value;
-            Type = type;
-        }
-
-        public ZValue(object? _, ZType type) // Nulls??
-        {
-            Type = type;
-        }
-    }
-    */
-
     public class ZParameterValue
     {
         public string Name;
@@ -478,15 +430,15 @@ namespace Zelt.AST
 
     public class ZEachStatement : IZStatement
     {
-        public ZVariable IteratingVariable;
-        public ZList ListToIterate;
+        public List<ZVariable> IteratingVariables;
+        // Lists to iterate could be literal lists or variables
+        public List<IZExpression> ListsToIterate;
         public List<IZStatement> Body;
-
-
-        public ZEachStatement(ZVariable iteratingVariable, ZList listToIterate, List<IZStatement> body)
+    
+        public ZEachStatement(List<ZVariable> iteratingVariables, List<IZExpression> listsToIterate, List<IZStatement> body)
         {
-            IteratingVariable = iteratingVariable;
-            ListToIterate = listToIterate;
+            IteratingVariables = iteratingVariables;
+            ListsToIterate = listsToIterate;
             Body = body;
         }
     }

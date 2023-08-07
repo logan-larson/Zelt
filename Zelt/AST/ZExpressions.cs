@@ -69,11 +69,11 @@ namespace Zelt.AST
     {
         public ZType Type { get; }
 
-        public List<IZExpression> Expressions;
+        public List<IZExpression> Elements;
 
-        public ZListExpression(List<IZExpression> expressions, ZType type)
+        public ZListExpression(List<IZExpression> elements, ZType type)
         {
-            Expressions = expressions;
+            Elements = elements;
             Type = type;
         }
     }

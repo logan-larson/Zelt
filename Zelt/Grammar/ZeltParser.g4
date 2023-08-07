@@ -44,7 +44,7 @@ elseIfStatement
 
 whileStatement : WHILE expression block ;
 
-eachStatement : EACH declaration IN expression block ;
+eachStatement : EACH declarationList IN expressionList block ;
 
 returnStatement
 	: RETURN SEMICOLON
@@ -58,6 +58,10 @@ returnStatement
 
 declarationStatement
 	: declaration SEMICOLON
+	;
+
+declarationList
+	: declaration (COMMA declaration)*
 	;
 
 declaration

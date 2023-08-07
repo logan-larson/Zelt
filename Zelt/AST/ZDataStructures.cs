@@ -56,7 +56,6 @@ namespace Zelt.AST
             ZInterface.Comparable,
             ZInterface.Equatable,
         }, true);
-
         public static ZType Float = new ZType("Float", null, new List<ZInterface>()
         {
             ZInterface.Multiplicative,
@@ -67,7 +66,6 @@ namespace Zelt.AST
             ZInterface.Comparable,
             ZInterface.Equatable,
         }, true);
-
         public static ZType String = new ZType("String", null, new List<ZInterface>()
         {
             ZInterface.Additive,
@@ -80,6 +78,7 @@ namespace Zelt.AST
             ZInterface.Negatable,
         }, true);
         public static ZType Null = new ZType("Null", null, null, true);
+        public static ZType Any = new ZType("Any", null, null, true); // Might have to use this for an empty type e.g. a := [] -- would be a := [Any] for now
         /*
         public static ZType Void = new ZType("void", null, true);
         public static ZType Char = new ZType("char", null, true);
@@ -125,6 +124,16 @@ namespace Zelt.AST
             }
 
             return false;
+        }
+    }
+
+    public class ZListType : ZType
+    {
+        public ZType ElementType;
+
+        public ZListType(ZType? elementType) : base($"[{elementType?.Name}]", null, null, true)
+        {
+            ElementType = elementType ?? ZType.Any;
         }
     }
 
@@ -325,6 +334,7 @@ namespace Zelt.AST
         }
     }
 
+    /*
     public class ZValue
     {
         public ZType Type;
@@ -370,19 +380,20 @@ namespace Zelt.AST
             Type = type;
         }
     }
+    */
 
     public class ZParameterValue
     {
         public string Name;
         public ZType Type;
-        public ZValue Value;
+        public IZExpression Expression;
         public int Position;
 
-        public ZParameterValue(string name, ZType type, ZValue value, int position)
+        public ZParameterValue(string name, ZType type, IZExpression expression, int position)
         {
             Name = name;
             Type = type;
-            Value = value;
+            Expression = expression;
             Position = position;
         }
     }
@@ -390,13 +401,13 @@ namespace Zelt.AST
     public class ZReturnValue
     {
         public ZType Type;
-        public ZValue Value;
+        public IZExpression Expression;
         public int Position;
 
-        public ZReturnValue(ZType type, ZValue value, int position)
+        public ZReturnValue(ZType type, IZExpression expression, int position)
         {
             Type = type;
-            Value = value;
+            Expression = expression;
             Position = position;
         }
     }

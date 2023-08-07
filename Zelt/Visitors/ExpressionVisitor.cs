@@ -34,8 +34,7 @@ namespace Zelt.Visitors
             }
             else if (context is ZeltParser.ListExpressionContext listExpressionContext)
             {
-                //return new LiteralVisitor(Types).VisitList(listExpressionContext.list());
-                throw new NotImplementedException();
+                return VisitListExpression(listExpressionContext);
             }
             else if (context is ZeltParser.AccessorExpressionContext accessorExpressionContext)
             {
@@ -87,27 +86,125 @@ namespace Zelt.Visitors
         {
             if (context.INTEGER() != null)
             {
-                return new ZLiteralExpression(new ZValue(int.Parse(context.INTEGER().GetText()), Types["Int"]));
+                return new ZIntegerExpression(int.Parse(context.INTEGER().GetText()));
             }
             else if (context.FLOAT() != null)
             {
-                return new ZLiteralExpression(new ZValue(float.Parse(context.FLOAT().GetText()), Types["Float"]));
+                return new ZFloatExpression(float.Parse(context.FLOAT().GetText()));
             }
             else if (context.STRING() != null)
             {
-                return new ZLiteralExpression(new ZValue(context.STRING().GetText(), Types["String"]));
+                return new ZStringExpression(context.STRING().GetText());
             }
             else if (context.BOOL() != null)
             {
-                return new ZLiteralExpression(new ZValue(bool.Parse(context.BOOL().GetText()), Types["Bool"]));
+                return new ZBoolExpression(bool.Parse(context.BOOL().GetText()));
             }
             else if (context.NULL() != null)
             {
-                return new ZLiteralExpression(new ZValue((object?)null, Types["Null"]));
+                return new ZNullExpression();
             }
 
             throw new NotImplementedException();
         }
+
+        public override IZExpression VisitListExpression([NotNull] ZeltParser.ListExpressionContext context)
+        {
+            List<IZExpression> listElements = new List<IZExpression>();
+            ZType? elementType = null;
+
+            foreach (var elementContext in context.list().listElement())
+            {
+                if (elementContext.DOUBLE_PERIOD() != null)
+                {
+                    var startExpr = Visit(elementContext.expression(0));
+                    var endExpr = Visit(elementContext.expression(1));
+
+                    if (startExpr.Type != ZType.Int || endExpr.Type != ZType.Int)
+                    {
+                        ErrorHandler.ThrowError("Range expressions must be integers", context.Start.Line, context.Start.Column, SourceCodeLines);
+                    }
+
+                    var start = (ZIntegerExpression)startExpr;
+                    var end = (ZIntegerExpression)endExpr;
+
+                    if (elementType == null)
+                    {
+                        elementType = startExpr.Type;
+                    }
+
+                    if (startExpr.Type != elementType || endExpr.Type != elementType)
+                    {
+                        ErrorHandler.ThrowError("All elements in a list must be of the same type", context.Start.Line, context.Start.Column, SourceCodeLines);
+                    }
+
+                    if (start.Value < end.Value)
+                    {
+                        for (var i = start.Value; i <= end.Value; i++)
+                        {
+                            listElements.Add(new ZIntegerExpression(i));
+                        }
+                    }
+                    else
+                    {
+                        for (var i = start.Value; i >= end.Value; i--)
+                        {
+                            listElements.Add(new ZIntegerExpression(i));
+                        }
+                    }
+                }
+                else
+                {
+                    var expr = Visit(elementContext.expression(0));
+
+                    if (elementType == null)
+                    {
+                        elementType = expr.Type;
+                    }
+
+                    if (expr.Type != elementType)
+                    {
+                        ErrorHandler.ThrowError("All elements in a list must be of the same type", context.Start.Line, context.Start.Column, SourceCodeLines);
+                    }
+
+                    listElements.Add(expr);
+                }
+            }
+
+            return new ZListExpression(listElements, elementType ?? ZType.Null);
+        }
+
+        /*
+        public override IZExpression VisitList([NotNull] ZeltParser.ListContext context)
+        {
+            if (context.listElement() == null)
+            {
+                return new ZListExpression(new List<IZExpression>(), Types["List"]);
+            }
+
+            // Get the type of the list from the first element
+            ZType type = Types[context.listElement().GetText()];
+
+            // Get the expressions in the list
+            List<IZExpression> expressions = new List<IZExpression>();
+            foreach (ZeltParser.ExpressionContext expressionContext in context.expression())
+            {
+                expressions.Add(VisitExpression(expressionContext));
+            }
+
+            // Check if the types of the expressions are equal to the type of the list
+            foreach (IZExpression expression in expressions)
+            {
+                if (expression.Type != type)
+                {
+                    ErrorHandler.ThrowError($"Cannot add type {expression.Type.Name} to list of type {type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
+                }
+            }
+
+            // Return the list as an expression
+            return new ZListExpression(expressions, type);
+        }
+        */
 
         public override IZExpression VisitIdentifierExpression([NotNull] ZeltParser.IdentifierExpressionContext context)
         {

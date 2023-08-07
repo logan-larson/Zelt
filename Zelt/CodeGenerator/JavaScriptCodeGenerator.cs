@@ -160,14 +160,15 @@ namespace Zelt.CodeGenerator
             if (assignment.IsDeclaration)
             {
                 GenerateCodeForDeclaration(new ZDeclaration(assignment.Variable));
-                //Stream.Write($"let {assignment.Variable.Name} = ");
+
                 Stream.Write($" = ");
+
                 GenerateCodeForExpression(assignment.Expression);
             }
             else
             {
-                //GenerateCodeForIdentifier(new ZIdentifierExpression(assignment.Variable.Name, assignment.Variable.Type));
                 Stream.Write($"{assignment.Variable.Name} = ");
+
                 GenerateCodeForExpression(assignment.Expression);
             }
         }
@@ -176,61 +177,74 @@ namespace Zelt.CodeGenerator
 
         public void GenerateCodeForExpression(IZExpression expression)
         {
-            if (expression is ZLiteralExpression literal)
+            switch (expression)
             {
-                GenerateCodeForLiteral(literal);
-            }
-            else if (expression is ZIdentifierExpression identifier)
-            {
-                // Not supported by parser yet, add identifier visitor??
-                GenerateCodeForIdentifier(identifier);
-            }
-            else if (expression is ZUnaryExpression unaryExpression)
-            {
-                GenerateCodeForUnaryExpression(unaryExpression);
-            }
-            else if (expression is ZBinaryExpression binaryExpression)
-            {
-                GenerateCodeForBinaryExpression(binaryExpression);
-            }
-            else
-            {
-                throw new NotImplementedException();
+                case ZLiteralExpression<int> intExpression:
+                    GenerateCodeForIntegerExpression(intExpression);
+                    break;
+                case ZLiteralExpression<float> floatExpression:
+                    GenerateCodeForFloatExpression(floatExpression);
+                    break;
+                case ZLiteralExpression<string> stringExpression:
+                    GenerateCodeForStringExpression(stringExpression);
+                    break;
+                case ZLiteralExpression<bool> boolExpression:
+                    GenerateCodeForBoolExpression(boolExpression);
+                    break;
+                case ZIdentifierExpression identifierExpression:
+                    GenerateCodeForIdentifier(identifierExpression);
+                    break;
+                case ZUnaryExpression unaryExpression:
+                    GenerateCodeForUnaryExpression(unaryExpression);
+                    break;
+                case ZBinaryExpression binaryExpression:
+                    GenerateCodeForBinaryExpression(binaryExpression);
+                    break;
+                case ZListExpression listExpression:
+                    GenerateCodeForListExpression(listExpression);
+                    break;
+                default:
+                    throw new NotImplementedException();
             }
         }
 
-        public void GenerateCodeForLiteral(ZLiteralExpression literal)
+        public void GenerateCodeForIntegerExpression(ZLiteralExpression<int> integerExpression)
         {
-            GenerateCodeForValue(literal.Value);
+            Stream.Write(integerExpression.Value.ToString());
         }
 
-        public void GenerateCodeForValue(ZValue value)
+        public void GenerateCodeForFloatExpression(ZLiteralExpression<float> floatExpression)
         {
-            if (value.IntValue != null)
-            {
-                Stream.Write(value.IntValue.ToString());
-            }
-            else if (value.FloatValue != null)
-            {
-                Stream.Write(value.FloatValue.ToString());
-            }
-            else if (value.StringValue != null)
-            {
-                Stream.Write(value.StringValue);
-            }
-            else if (value.BoolValue != null)
-            {
-                Stream.Write(value.BoolValue.ToString()?.ToLowerInvariant());
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
+            Stream.Write(floatExpression.Value.ToString());
+        }
+
+        public void GenerateCodeForStringExpression(ZLiteralExpression<string> stringExpression)
+        {
+            Stream.Write(stringExpression.Value);
+        }
+
+        public void GenerateCodeForBoolExpression(ZLiteralExpression<bool> boolExpression)
+        {
+            Stream.Write(boolExpression.Value.ToString().ToLowerInvariant());
         }
 
         public void GenerateCodeForIdentifier(ZIdentifierExpression identifier)
         {
             Stream.Write(identifier.Name);
+        }
+
+        public void GenerateCodeForListExpression(ZListExpression listExpression)
+        {
+            Stream.Write("[");
+            for (int i = 0; i < listExpression.Expressions.Count(); i++)
+            {
+                GenerateCodeForExpression(listExpression.Expressions[i]);
+                if (i < listExpression.Expressions.Count() - 1)
+                {
+                    Stream.Write(", ");
+                }
+            }
+            Stream.Write("]");
         }
 
         public void GenerateCodeForUnaryExpression(ZUnaryExpression expression)

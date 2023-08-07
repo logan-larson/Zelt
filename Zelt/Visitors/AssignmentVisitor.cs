@@ -46,7 +46,7 @@ namespace Zelt.Visitors
             List<ZType> types = new List<ZType>();
             foreach (var type in context.typeList().type())
             {
-                types.Add(new TypeVisitor(Types).VisitType(type));
+                types.Add(new TypeVisitor(Types, SourceCodeLines).VisitType(type));
             }
 
             // Check if the number of identifiers and types match

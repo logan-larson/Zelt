@@ -32,8 +32,6 @@ namespace Zelt.CodeGenerator
 
         void GenerateCodeForExpression(IZExpression expression);
 
-        void GenerateCodeForLiteral(ZLiteralExpression literal);
-
         void GenerateCodeForIdentifier(ZIdentifierExpression identifier);
 
         /*

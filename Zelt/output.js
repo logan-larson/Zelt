@@ -1,17 +1,12 @@
-let a = 65;
+let a = [1, 2, 3];
 
-let b = 5;
+let b = [1.1, 2.2, 3.3];
 
-let c = (a/b);
+let c = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-let d = (c<b);
+let creverse = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
 
-while (d) {
-let e = 1;
+let d = a;
 
-c = (c+e);
-
-d = (c<b);
-
-}
+let e = b;
 

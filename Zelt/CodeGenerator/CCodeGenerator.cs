@@ -51,11 +51,6 @@ namespace Zelt.CodeGenerator
             throw new NotImplementedException();
         }
 
-        public void GenerateCodeForLiteral(ZLiteralExpression literal)
-        {
-            throw new NotImplementedException();
-        }
-
         public void GenerateCodeForIdentifier(ZIdentifierExpression identifier)
         {
             throw new NotImplementedException();

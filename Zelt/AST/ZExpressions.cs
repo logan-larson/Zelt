@@ -6,33 +6,51 @@ using System.Threading.Tasks;
 
 namespace Zelt.AST
 {
-    public class ZExpressionList
-    {
-        public List<IZExpression> Expressions;
-
-        public ZExpressionList()
-        {
-            Expressions = new List<IZExpression>();
-        }
-    }
-
     public interface IZExpression
     {
         public ZType Type { get; }
     }
 
-    public class ZLiteralExpression : IZExpression
+    // Literals
+
+    public abstract class ZLiteralExpression<T> : IZExpression
     {
         public ZType Type { get; }
-        
-        public ZValue Value;
+        public T Value { get; }
 
-        public ZLiteralExpression(ZValue value)
+        public ZLiteralExpression(T value, ZType type)
         {
             Value = value;
-            Type = value.Type;
+            Type = type;
         }
     }
+
+    public class ZIntegerExpression : ZLiteralExpression<int>
+    {
+        public ZIntegerExpression(int value) : base(value, ZType.Int) { }
+    }
+
+    public class ZFloatExpression : ZLiteralExpression<float>
+    {
+        public ZFloatExpression(float value) : base(value, ZType.Float) { }
+    }
+
+    public class ZStringExpression : ZLiteralExpression<string>
+    {
+        public ZStringExpression(string value) : base(value, ZType.String) { }
+    }
+
+    public class ZBoolExpression : ZLiteralExpression<bool>
+    {
+        public ZBoolExpression(bool value) : base(value, ZType.Bool) { }
+    }
+
+    public class ZNullExpression : ZLiteralExpression<object?>
+    {
+        public ZNullExpression() : base(null, ZType.Null) { }
+    }
+
+    // Identifier
 
     public class ZIdentifierExpression : IZExpression
     {
@@ -44,6 +62,19 @@ namespace Zelt.AST
         {
             Name = name;
             Type = type; // type is resolved and passed in by the parser based on the name
+        }
+    }
+
+    public class ZListExpression : IZExpression
+    {
+        public ZType Type { get; }
+
+        public List<IZExpression> Expressions;
+
+        public ZListExpression(List<IZExpression> expressions, ZType type)
+        {
+            Expressions = expressions;
+            Type = type;
         }
     }
 

@@ -20,9 +20,8 @@ namespace Zelt.Visitors
             { "Null", ZType.Null },
         };
 
-        // This represents the variables that are currently in scope
+        // Global scope variables, functions, structs (type definitions)
         public Dictionary<string, ZVariable> Variables { get; private set; } = new Dictionary<string, ZVariable>();
-
         public Dictionary<string, ZFunction> Functions { get; private set; } = new Dictionary<string, ZFunction>();
         public Dictionary<string, ZStruct> Structs { get; private set; } = new Dictionary<string, ZStruct>();
         public Dictionary<string, ZStructInstance> StructInstances { get; private set; } = new Dictionary<string, ZStructInstance>();
@@ -34,15 +33,16 @@ namespace Zelt.Visitors
             SourceCodeLines = sourceCodeLines;
         }
 
-
         public override ZProgram VisitProgram([NotNull] ZeltParser.ProgramContext context)
         {
             ZProgram program = new ZProgram();
             // Visit each statement in the program
 
+            StatementVisitor statementVisitor = new StatementVisitor(Types, Variables, Functions, Structs, StructInstances, SourceCodeLines);
+
             foreach (ZeltParser.StatementContext statement in context.statement())
             {
-                program.Statements.Add(new StatementVisitor(Types, Variables, Functions, Structs, StructInstances, SourceCodeLines).VisitStatement(statement));
+                program.Statements.Add(statementVisitor.VisitStatement(statement));
             }
 
             /*

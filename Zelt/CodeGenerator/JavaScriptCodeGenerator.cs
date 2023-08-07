@@ -58,9 +58,17 @@ namespace Zelt.CodeGenerator
             {
                 GenerateCodeForDeclarationStatement(declarationStatement);
             }
-            else if (statement is ZAssignmentStatement)
+            else if (statement is ZAssignmentStatement assignmentStatement)
             {
-                GenerateCodeForAssignmentStatement((ZAssignmentStatement)statement);
+                GenerateCodeForAssignmentStatement(assignmentStatement);
+            }
+            else if (statement is ZIfStatement ifStatement)
+            {
+                GenerateCodeForIfStatement(ifStatement);
+            }
+            else if (statement is ZWhileStatement whileStatement)
+            {
+                GenerateCodeForWhileStatement(whileStatement);
             }
             /*
             else if (statement is ZExpressionStatement)
@@ -72,7 +80,11 @@ namespace Zelt.CodeGenerator
             {
                 throw new NotImplementedException();
             }
+            
+            Stream.WriteLine();
         }
+
+        // ------------------------------ Statements ------------------------------
 
         public void GenerateCodeForDeclarationStatement(ZDeclarationStatement statement)
         {
@@ -92,6 +104,52 @@ namespace Zelt.CodeGenerator
             }
         }
 
+        public void GenerateCodeForIfStatement(ZIfStatement statement)
+        {
+            Stream.Write("if (");
+            GenerateCodeForExpression(statement.Condition);
+            Stream.WriteLine(") {");
+            foreach (var stmt in statement.TrueBody)
+            {
+                GenerateCodeForStatement(stmt);
+            }
+            Stream.WriteLine("}");
+            if (statement.FalseBody.Count > 0)
+            {
+                if (statement.FalseBody.Count == 1 && statement.FalseBody[0] is ZIfStatement)
+                {
+                    Stream.Write("else ");
+                    GenerateCodeForStatement(statement.FalseBody[0]);
+                }
+                else
+                {
+                    Stream.WriteLine("else {");
+
+                    foreach (var stmt in statement.FalseBody)
+                    {
+                        GenerateCodeForStatement(stmt);
+                    }
+
+                    Stream.WriteLine("}");
+                }
+            }
+        }
+
+        public void GenerateCodeForWhileStatement(ZWhileStatement statement)
+        {
+            Stream.Write("while (");
+            GenerateCodeForExpression(statement.Condition);
+            Stream.WriteLine(") {");
+            foreach (var stmt in statement.Body)
+            {
+                GenerateCodeForStatement(stmt);
+            }
+            Stream.WriteLine("}");
+        }
+
+
+        // -------------------- Assignments and Declarations ----------------------
+        
         public void GenerateCodeForDeclaration(ZDeclaration declaration)
         {
             Stream.Write($"let {declaration.Variable.Name}");
@@ -113,6 +171,8 @@ namespace Zelt.CodeGenerator
                 GenerateCodeForExpression(assignment.Expression);
             }
         }
+
+        // ------------------------------ Expressions ------------------------------
 
         public void GenerateCodeForExpression(IZExpression expression)
         {

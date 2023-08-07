@@ -5,4 +5,8 @@ c := a / b;
 
 d : Bool = c < b;
 
-c = 12.2;
+while d {
+  e := 1;
+  c = c + e;
+  d = c < b;
+}

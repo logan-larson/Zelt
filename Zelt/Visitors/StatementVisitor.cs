@@ -59,8 +59,6 @@ namespace Zelt.Visitors
             return new ZDeclarationStatement(declarations);
         }
 
-        // Visit each type of assignment
-
         public override ZAssignmentStatement VisitAssignmentStatement([NotNull] ZeltParser.AssignmentStatementContext context)
         {
             List<ZAssignment> assignments = new List<ZAssignment>();
@@ -99,5 +97,93 @@ namespace Zelt.Visitors
             throw new NotImplementedException();
         }
 
+        public override IZStatement VisitIfStatement([NotNull] ZeltParser.IfStatementContext context)
+        {
+            IZExpression condition = new ExpressionVisitor(Types, Variables, SourceCodeLines).VisitExpression(context.expression());
+
+            // If the condition is not a boolean, throw an error
+            if (condition.Type != ZType.Bool)
+            {
+                ErrorHandler.ThrowError("Condition must be a boolean", context.Start.Line, context.Start.Column, SourceCodeLines);
+            }
+
+            List<IZStatement> trueBody = new List<IZStatement>();
+            List<IZStatement> falseBody = new List<IZStatement>();
+
+            // Setup the scope for the true body
+            StatementVisitor trueVisitor = new StatementVisitor(Types, Variables, Functions, Structs, StructInstances, SourceCodeLines);
+
+            // If there is a true body, visit it
+            if (context.block() != null)
+            {
+                foreach (var statement in context.block().statement())
+                {
+                    trueBody.Add(trueVisitor.Visit(statement));
+                }
+            }
+
+            // Setup the scope for the false body
+            StatementVisitor falseVisitor = new StatementVisitor(Types, Variables, Functions, Structs, StructInstances, SourceCodeLines);
+
+            // If there is an else if statement, visit it in its own scope
+            if (context.elseIfStatement() == null)
+                return new ZIfStatement(condition, trueBody, falseBody);
+
+            if (context.elseIfStatement().ifStatement() != null)
+            {
+                // Setup if statement context
+                ZeltParser.IfStatementContext ifStatementContext = context.elseIfStatement().ifStatement();
+
+                // Visit the else if statement
+                falseBody.Add(falseVisitor.VisitIfStatement(ifStatementContext));
+            }
+            // If there is an else statement, visit it in its own scope
+            else if (context.elseIfStatement().block() != null)
+            {
+                // If there is an else body, visit it
+                if (context.block().statement().Length > 0)
+                {
+                    foreach (var statement in context.block().statement())
+                    {
+                        falseBody.Add(falseVisitor.Visit(statement));
+                    }
+                }
+            }
+
+            return new ZIfStatement(condition, trueBody, falseBody);
+        }
+
+        public override IZStatement VisitWhileStatement([NotNull] ZeltParser.WhileStatementContext context)
+        {
+            IZExpression condition = new ExpressionVisitor(Types, Variables, SourceCodeLines).VisitExpression(context.expression());
+
+            // If the condition is not a boolean, throw an error
+            if (condition.Type != ZType.Bool)
+            {
+                ErrorHandler.ThrowError("Condition must be a boolean", context.Start.Line, context.Start.Column, SourceCodeLines);
+            }
+
+            List<IZStatement> body = new List<IZStatement>();
+
+            // Setup the scope for the body
+            StatementVisitor visitor = new StatementVisitor(Types, Variables, Functions, Structs, StructInstances, SourceCodeLines);
+
+            // If there is a body, visit it
+            if (context.block() != null)
+            {
+                foreach (var statement in context.block().statement())
+                {
+                    body.Add(visitor.Visit(statement));
+                }
+            }
+
+            return new ZWhileStatement(condition, body);
+        }
+
+        // TODO: Add support for lists before adding this
+        public override IZStatement VisitEachStatement([NotNull] ZeltParser.EachStatementContext context)
+        {
+            return base.VisitEachStatement(context);
+        }
     }
 }

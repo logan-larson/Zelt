@@ -238,7 +238,7 @@ namespace Zelt.Visitors
                 {
                     ErrorHandler.ThrowError($"{left.Type.Name} and {right.Type.Name} do not implement the Comparable interface.", context.Start.Line, context.Start.Column, SourceCodeLines);
                 }
-                return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.LessThan, left.Type));
+                return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.LessThan, ZType.Bool));
             }
             else if (context.relOp().LESS_THAN_OR_EQUAL() != null)
             {
@@ -246,7 +246,7 @@ namespace Zelt.Visitors
                 {
                     ErrorHandler.ThrowError($"{left.Type.Name} and {right.Type.Name} do not implement the Comparable interface.", context.Start.Line, context.Start.Column, SourceCodeLines);
                 }
-                return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.LessThanOrEqual, left.Type));
+                return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.LessThanOrEqual, ZType.Bool));
             }
             else if (context.relOp().GREATER_THAN() != null)
             {
@@ -254,7 +254,7 @@ namespace Zelt.Visitors
                 {
                     ErrorHandler.ThrowError($"{left.Type.Name} and {right.Type.Name} do not implement the Comparable interface.", context.Start.Line, context.Start.Column, SourceCodeLines);
                 }
-                return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.GreaterThan, left.Type));
+                return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.GreaterThan, ZType.Bool));
             }
             else if (context.relOp().GREATER_THAN_OR_EQUAL() != null)
             {
@@ -262,7 +262,7 @@ namespace Zelt.Visitors
                 {
                     ErrorHandler.ThrowError($"{left.Type.Name} and {right.Type.Name} do not implement the Comparable interface.", context.Start.Line, context.Start.Column, SourceCodeLines);
                 }
-                return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.GreaterThanOrEqual, left.Type));
+                return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.GreaterThanOrEqual, ZType.Bool));
             }
             else if (context.relOp().EQUALS() != null)
             {
@@ -270,7 +270,7 @@ namespace Zelt.Visitors
                 {
                     ErrorHandler.ThrowError($"{left.Type.Name} and {right.Type.Name} do not implement the Equatable interface.", context.Start.Line, context.Start.Column, SourceCodeLines);
                 }
-                return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.Equal, left.Type));
+                return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.Equal, ZType.Bool));
             }
             else if (context.relOp().NOT_EQUALS() != null)
             {
@@ -278,7 +278,7 @@ namespace Zelt.Visitors
                 {
                     ErrorHandler.ThrowError($"{left.Type.Name} and {right.Type.Name} do not implement the Equatable interface.", context.Start.Line, context.Start.Column, SourceCodeLines);
                 }
-                return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.NotEqual, left.Type));
+                return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.NotEqual, ZType.Bool));
             }
             else
             {
@@ -305,12 +305,12 @@ namespace Zelt.Visitors
             if (context.boolOp().AND() != null)
             {
                 return new ZBinaryExpression(left, right,
-                    new ZBinaryOperator(EZBinaryOperator.And, left.Type));
+                    new ZBinaryOperator(EZBinaryOperator.And, ZType.Bool));
             }
             else if (context.boolOp().OR() != null)
             {
                 return new ZBinaryExpression(left, right,
-                    new ZBinaryOperator(EZBinaryOperator.Or, left.Type));
+                    new ZBinaryOperator(EZBinaryOperator.Or, ZType.Bool));
             }
             else
             {

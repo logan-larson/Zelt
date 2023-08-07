@@ -57,20 +57,9 @@ namespace Zelt.Visitors
             */
 
             // Type check the program
-            TypeCheck();
+            TypeChecker.CheckVariableDeclarationTypes(Variables, SourceCodeLines);
 
             return program;
-        }
-
-        public void TypeCheck()
-        {
-            foreach (var variable in Variables)
-            {
-                if (!variable.Value.Type.IsDefined)
-                {
-                    ErrorHandler.ThrowError($"Variable '{variable.Value.Name}' type '{variable.Value.Type.Name}' was not defined.", variable.Value.Line, variable.Value.Column, SourceCodeLines);
-                }
-            }
         }
     }
 }

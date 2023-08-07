@@ -81,6 +81,10 @@ namespace Zelt.Visitors
             for (int i = 0; i < identifiers.Count; i++)
             {
                 var variable = new ZVariable(identifiers[i], types[i], true);
+
+                variable.Line = context.Start.Line;
+                variable.Column = context.Start.Column;
+
                 assignments.Add(new ZAssignment(variable, expressions[i], true));
             }
 
@@ -129,6 +133,10 @@ namespace Zelt.Visitors
             for (int i = 0; i < identifiers.Count; i++)
             {
                 var variable = new ZVariable(identifiers[i], expressions[i].Type, true);
+
+                variable.Line = context.Start.Line;
+                variable.Column = context.Start.Column;
+
                 assignments.Add(new ZAssignment(variable, expressions[i], true));
             }
 

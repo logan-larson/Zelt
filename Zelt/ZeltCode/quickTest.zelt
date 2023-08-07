@@ -1,8 +1,13 @@
-a : [Int] = [1, 2, 3];
-b : [Float] = [1.1, 2.2, 3.3];
-c := [1..10];
-creverse := [10..1];
 
-d := a;
+if false {
+  x : Int = 1;
+} else {
+  x : Int = 2;
+}
 
-e := b;
+
+if true {
+  x : Special = 1;
+} else {
+  x : Special = 2;
+}

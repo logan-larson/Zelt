@@ -111,7 +111,8 @@ namespace Zelt.Visitors
             List<IZStatement> falseBody = new List<IZStatement>();
 
             // Setup the scope for the true body
-            StatementVisitor trueVisitor = new StatementVisitor(Types, Variables, Functions, Structs, StructInstances, SourceCodeLines);
+            Dictionary<string, ZVariable> trueVariables = new Dictionary<string, ZVariable>(Variables);
+            StatementVisitor trueVisitor = new StatementVisitor(Types, trueVariables, Functions, Structs, StructInstances, SourceCodeLines);
 
             // If there is a true body, visit it
             if (context.block() != null)
@@ -120,14 +121,18 @@ namespace Zelt.Visitors
                 {
                     trueBody.Add(trueVisitor.Visit(statement));
                 }
+
+                // Type check the body -- is this necessary?
+                TypeChecker.CheckVariableDeclarationTypes(trueVariables, SourceCodeLines);
             }
 
-            // Setup the scope for the false body
-            StatementVisitor falseVisitor = new StatementVisitor(Types, Variables, Functions, Structs, StructInstances, SourceCodeLines);
-
-            // If there is an else if statement, visit it in its own scope
+            // If there isn't an else if statement, return the if statement
             if (context.elseIfStatement() == null)
                 return new ZIfStatement(condition, trueBody, falseBody);
+
+            // Setup the scope for the false body
+            Dictionary<string, ZVariable> falseVariables = new Dictionary<string, ZVariable>(Variables);
+            StatementVisitor falseVisitor = new StatementVisitor(Types, falseVariables, Functions, Structs, StructInstances, SourceCodeLines);
 
             if (context.elseIfStatement().ifStatement() != null)
             {
@@ -147,6 +152,9 @@ namespace Zelt.Visitors
                     {
                         falseBody.Add(falseVisitor.Visit(statement));
                     }
+
+                    // Type check the body -- is this necessary?
+                    TypeChecker.CheckVariableDeclarationTypes(falseVariables, SourceCodeLines);
                 }
             }
 
@@ -166,7 +174,8 @@ namespace Zelt.Visitors
             List<IZStatement> body = new List<IZStatement>();
 
             // Setup the scope for the body
-            StatementVisitor visitor = new StatementVisitor(Types, Variables, Functions, Structs, StructInstances, SourceCodeLines);
+            Dictionary<string, ZVariable> bodyVariables = new Dictionary<string, ZVariable>(Variables);
+            StatementVisitor visitor = new StatementVisitor(Types, bodyVariables, Functions, Structs, StructInstances, SourceCodeLines);
 
             // If there is a body, visit it
             if (context.block() != null)
@@ -175,6 +184,9 @@ namespace Zelt.Visitors
                 {
                     body.Add(visitor.Visit(statement));
                 }
+
+                // Type check the body -- is this necessary?
+                TypeChecker.CheckVariableDeclarationTypes(bodyVariables, SourceCodeLines);
             }
 
             return new ZWhileStatement(condition, body);

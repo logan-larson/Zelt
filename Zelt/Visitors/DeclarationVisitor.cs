@@ -68,6 +68,9 @@ namespace Zelt.Visitors
                 // If I do this, that means every struct declaration will have to provide a default value for the struct
                 var variable = new ZVariable(identifiers[i], types[i]);
 
+                variable.Line = context.Start.Line;
+                variable.Column = context.Start.Column;
+
                 Variables.Add(variable.Name, variable);
 
                 declarations.Add(new ZDeclaration(variable));

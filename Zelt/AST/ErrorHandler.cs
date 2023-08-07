@@ -22,6 +22,13 @@ namespace Zelt.AST
             string[] sourceCodeLines
         )
         {
+            int lineNumber = line - 1;
+
+            if (lineNumber < 0 || lineNumber >= sourceCodeLines.Length)
+            {
+                ThrowError(message);
+            }
+
             string lineOfCode = sourceCodeLines[line - 1];
             string errorPointer = new string(' ', column) + "^";
             string errorPrefix = $"Error :: Line = {line}, Position = {column}\n{lineOfCode}\n{errorPointer}\n\n";

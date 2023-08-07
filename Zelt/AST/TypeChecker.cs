@@ -6,25 +6,25 @@ using System.Threading.Tasks;
 
 namespace Zelt.AST
 {
-    public class TypeChecker
+    public static class TypeChecker
     {
-        public Dictionary<string, ZVariable> Variables { get; set; }
-
-        public string[] SourceCodeLines { get; set; }
-
-        public TypeChecker(Dictionary<string, ZVariable> variables, string[] sourceCodeLines)
+        public static void CheckVariableDeclarationTypes(Dictionary<string, ZVariable> variables, string[] sourceCodeLines)
         {
-            Variables = variables;
-            SourceCodeLines = sourceCodeLines;
-        }
-
-        public void CheckVariableDeclarationTypes()
-        {
-            foreach (var variable in Variables)
+            foreach (var variable in variables)
             {
-                if (!variable.Value.Type.IsDefined)
+                if (variable.Value.Type is ZListType listType)
                 {
-                    ErrorHandler.ThrowError($"Variable '{variable.Value.Name}' type '{variable.Value.Type.Name}' was not defined.", variable.Value.Line, variable.Value.Column, SourceCodeLines);
+                    if (!listType.ElementType.IsDefined)
+                    {
+                        ErrorHandler.ThrowError($"Type '{listType.ElementType.Name}' was not defined. Type of '{variable.Key}'", variable.Value.Line, variable.Value.Column, sourceCodeLines);
+                    }
+                }
+                else if (variable.Value.Type is ZType zType)
+                {
+                    if (!zType.IsDefined)
+                    {
+                        ErrorHandler.ThrowError($"Type '{variable.Value.Type.Name}' was not defined. Type of '{variable.Key}'", variable.Value.Line, variable.Value.Column, sourceCodeLines);
+                    }
                 }
             }
         }

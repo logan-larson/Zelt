@@ -33,20 +33,18 @@ namespace Zelt.AST
     public class ZType : IComparable<ZType>
     {
         public string Name;
-        public List<ZType> ParentTypes;
         public List<ZInterface> Interfaces;
         public bool IsDefined;
 
-        public ZType(string name, List<ZType>? parentTypes, List<ZInterface>? interfaces, bool isDefined = false)
+        public ZType(string name, List<ZInterface>? interfaces, bool isDefined = false)
         {
             Name = name;
-            ParentTypes = parentTypes ?? new List<ZType>();
             Interfaces = interfaces ?? new List<ZInterface>();
             IsDefined = isDefined;
         }
 
         // Primitive types
-        public static ZType Int = new ZType("Int", null, new List<ZInterface>()
+        public static ZType Int = new ZType("Int", new List<ZInterface>()
         {
             ZInterface.Multiplicative,
             ZInterface.Divisive,
@@ -56,7 +54,7 @@ namespace Zelt.AST
             ZInterface.Comparable,
             ZInterface.Equatable,
         }, true);
-        public static ZType Float = new ZType("Float", null, new List<ZInterface>()
+        public static ZType Float = new ZType("Float", new List<ZInterface>()
         {
             ZInterface.Multiplicative,
             ZInterface.Divisive,
@@ -66,19 +64,19 @@ namespace Zelt.AST
             ZInterface.Comparable,
             ZInterface.Equatable,
         }, true);
-        public static ZType String = new ZType("String", null, new List<ZInterface>()
+        public static ZType String = new ZType("String", new List<ZInterface>()
         {
             ZInterface.Additive,
             ZInterface.Comparable,
             ZInterface.Equatable,
         }, true);
-        public static ZType Bool = new ZType("Bool", null, new List<ZInterface>()
+        public static ZType Bool = new ZType("Bool", new List<ZInterface>()
         {
             ZInterface.Equatable,
             ZInterface.Negatable,
         }, true);
-        public static ZType Null = new ZType("Null", null, null, true);
-        public static ZType Any = new ZType("Any", null, null, true); // Might have to use this for an empty type e.g. a := [] -- would be a := [Any] for now
+        public static ZType Null = new ZType("Null", null, true);
+        public static ZType Any = new ZType("Any", null, true); // Might have to use this for an empty type e.g. a := [] -- would be a := [Any] for now
         /*
         public static ZType Void = new ZType("void", null, true);
         public static ZType Char = new ZType("char", null, true);
@@ -97,21 +95,16 @@ namespace Zelt.AST
                 return 0;
             }
 
-            // IDK what this does
-            if (ParentTypes.Contains(other))
-            {
-                return 1;
-            }
-
             return -1;
         }
 
         public bool Implements(ZInterface other)
         {
             // If the type implements the interface directly
-            if (Interfaces.Contains(other))
+            foreach (var @interface in Interfaces)
             {
-                return true;
+                if (@interface.CompareTo(other) != 0)
+                    return true;
             }
 
             // If the type implements the interface through one of its interfaces' parent interfaces
@@ -131,7 +124,10 @@ namespace Zelt.AST
     {
         public ZType ElementType;
 
-        public ZListType(ZType? elementType) : base($"[{elementType?.Name}]", null, null, true)
+        public ZListType(ZType? elementType, List<ZInterface>? interfaces = null)
+            : base(
+                  $"[{elementType?.Name}]", interfaces ?? new List<ZInterface>() { ZInterface.Iterable }, true
+            )
         {
             ElementType = elementType ?? ZType.Any;
         }
@@ -145,21 +141,31 @@ namespace Zelt.AST
         // Don't know if I will have interfaces inherit from other interfaces in the future
         public List<ZInterface> ParentInterfaces;        
 
-        public ZInterface(string name)
+        public ZInterface(string name, List<ZInterface>? parentInterfaces = null)
         {
             Name = name;
+            ParentInterfaces = parentInterfaces ?? new List<ZInterface>();
             FunctionSignatures = new List<ZFunctionSignature>();
-            ParentInterfaces = new List<ZInterface>();
         }
 
-        public static ZInterface Multiplicative = new ZInterface("Multiplicative"); // *
-        public static ZInterface Divisive = new ZInterface("Divisive"); // /
-        public static ZInterface Modulable = new ZInterface("Modulable"); // %
-        public static ZInterface Additive = new ZInterface("Additive"); // +
-        public static ZInterface Subtractive = new ZInterface("Subtractive"); // -
+        public static ZInterface Number = new ZInterface("Number");
+
+        public static ZInterface Multiplicative
+            = new ZInterface("Multiplicative", new List<ZInterface>() { Number }); // *
+        public static ZInterface Divisive
+            = new ZInterface("Divisive", new List<ZInterface>() { Number }); // /
+        public static ZInterface Modulable
+            = new ZInterface("Modulable", new List<ZInterface>() { Number }); // %
+        public static ZInterface Additive
+            = new ZInterface("Additive", new List<ZInterface>() { Number }); // +
+        public static ZInterface Subtractive
+            = new ZInterface("Subtractive", new List<ZInterface>() { Number }); // -
+
         public static ZInterface Comparable = new ZInterface("Comparable"); // <, >, <=, >=
         public static ZInterface Equatable = new ZInterface("Equatable"); // == and !=
         public static ZInterface Negatable = new ZInterface("Negatable"); // !
+
+        public static ZInterface Iterable = new ZInterface("Iterable");
 
         public int CompareTo(ZInterface? other)
         {
@@ -185,9 +191,11 @@ namespace Zelt.AST
         public bool Implements(ZInterface other)
         {
             // If this interface directly implements the other interface
-            if (ParentInterfaces.Contains(other))
+            // If the type implements the interface directly
+            foreach (var @interface in ParentInterfaces)
             {
-                return true;
+                if (@interface.CompareTo(other) != 0)
+                    return true;
             }
 
             // If this interface implements the other interface through one of its parent interfaces

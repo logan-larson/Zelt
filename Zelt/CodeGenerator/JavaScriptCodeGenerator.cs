@@ -151,11 +151,12 @@ namespace Zelt.CodeGenerator
             Stream.WriteLine("}");
         }
 
+        /*
         public void GenerateCodeForEachStatement(ZEachStatement statement)
         {
             // Assuming all lists have the same size, use the first list for the loop range
-            ZListExpression? list = statement.ListsToIterate[0] as ZListExpression;
-            ZIdentifierExpression? id = statement.ListsToIterate[0] as ZIdentifierExpression;
+            ZListExpression? list = statement.ListsToIterate[0];
+            //ZIdentifierExpression? id = statement.ListsToIterate[0] as ZIdentifierExpression;
 
             // Create an iteration variable for index
             string iterator = "_i";
@@ -204,10 +205,38 @@ namespace Zelt.CodeGenerator
 
             Stream.WriteLine("}");
         }
+        */
 
+        public void GenerateCodeForEachStatement(ZEachStatement statement)
+        {
+            // Assuming all lists have the same size, use the first list for the loop range
+            string iterator = "_i";
+
+            Stream.Write($"for(let {iterator} = 0; {iterator} < ");
+            GenerateCodeForExpression(statement.ListsToIterate[0]); // Writing the first list expression directly
+            Stream.Write($".length; {iterator}++) {{\n");
+
+            // Declare the iteration variables and assign the respective value from each list
+            for (int i = 0; i < statement.IteratingVariables.Count; i++)
+            {
+                ZVariable variable = statement.IteratingVariables[i];
+
+                Stream.Write($"  let {variable.Name} = ");
+                GenerateCodeForExpression(statement.ListsToIterate[i]); // Writing the list expression directly
+                Stream.WriteLine($"[{iterator}];");
+            }
+
+            // Generate code for the body of the each loop
+            foreach (IZStatement stmt in statement.Body)
+            {
+                GenerateCodeForStatement(stmt); // Indentation inside this method if needed
+            }
+
+            Stream.WriteLine("}");
+        }
 
         // -------------------- Assignments and Declarations ----------------------
-        
+
         public void GenerateCodeForDeclaration(ZDeclaration declaration)
         {
             Stream.Write($"let {declaration.Variable.Name}");

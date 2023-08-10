@@ -120,7 +120,7 @@ namespace Zelt.Visitors
                     var startExpr = Visit(elementContext.expression(0));
                     var endExpr = Visit(elementContext.expression(1));
 
-                    if (startExpr.Type != ZType.Int || endExpr.Type != ZType.Int)
+                    if (startExpr.Type.CompareTo(ZType.Int) != 0 || endExpr.Type.CompareTo(ZType.Int) != 0)
                     {
                         ErrorHandler.ThrowError("Range expressions must be integers", context.Start.Line, context.Start.Column, SourceCodeLines);
                     }
@@ -133,7 +133,7 @@ namespace Zelt.Visitors
                         elementType = startExpr.Type;
                     }
 
-                    if (startExpr.Type != elementType || endExpr.Type != elementType)
+                    if (startExpr.Type.CompareTo(elementType) != 0 || endExpr.Type.CompareTo(elementType) != 0)
                     {
                         ErrorHandler.ThrowError("All elements in a list must be of the same type", context.Start.Line, context.Start.Column, SourceCodeLines);
                     }
@@ -162,7 +162,7 @@ namespace Zelt.Visitors
                         elementType = expr.Type;
                     }
 
-                    if (expr.Type != elementType)
+                    if (expr.Type.CompareTo(elementType) != 0)
                     {
                         ErrorHandler.ThrowError("All elements in a list must be of the same type", context.Start.Line, context.Start.Column, SourceCodeLines);
                     }
@@ -231,10 +231,7 @@ namespace Zelt.Visitors
             IZExpression expression = VisitExpression(context.expression());
 
             // Check if the type implements the Not interface
-            if (!expression.Type.Implements(ZInterface.Negatable))
-            {
-                ErrorHandler.ThrowError($"Type {expression.Type.Name} does not implement the Negatable interface", context.Start.Line, context.Start.Column, SourceCodeLines);
-            }
+            TypeChecker.TypeImplements(expression.Type, ZInterface.Negatable, context.Start.Line, context.Start.Column, SourceCodeLines);
 
             return new ZUnaryExpression(expression, new ZUnaryOperator(EZUnaryOperator.Negate, expression.Type));
         }
@@ -245,35 +242,32 @@ namespace Zelt.Visitors
             IZExpression right = VisitExpression(context.expression(1));
 
             // Check if the types are equal
-            if (left.Type != right.Type)
+            if (left.Type.CompareTo(right.Type) != 0)
             {
                 ErrorHandler.ThrowError($"Cannot multiply types {left.Type.Name} and {right.Type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
             }
 
             if (context.multOp().MULTIPLY() != null)
             {
-                if (!left.Type.Implements(ZInterface.Multiplicative))
-                {
-                    ErrorHandler.ThrowError($"{left.Type.Name} and {right.Type.Name} do not implement the Multiplicative interface.", context.Start.Line, context.Start.Column, SourceCodeLines);
-                }
+                TypeChecker.TypeImplements(left.Type, ZInterface.Multiplicative, context.Start.Line, context.Start.Column, SourceCodeLines);
+                TypeChecker.TypeImplements(right.Type, ZInterface.Multiplicative, context.Start.Line, context.Start.Column, SourceCodeLines);
+
                 return new ZBinaryExpression(left, right,
                     new ZBinaryOperator(EZBinaryOperator.Multiply, left.Type));
             }
             else if (context.multOp().DIVIDE() != null)
             {
-                if (!left.Type.Implements(ZInterface.Divisive))
-                {
-                    ErrorHandler.ThrowError($"{left.Type.Name} and {right.Type.Name} do not implement the Divisive interface.", context.Start.Line, context.Start.Column, SourceCodeLines);
-                }
+                TypeChecker.TypeImplements(left.Type, ZInterface.Divisive, context.Start.Line, context.Start.Column, SourceCodeLines);
+                TypeChecker.TypeImplements(right.Type, ZInterface.Divisive, context.Start.Line, context.Start.Column, SourceCodeLines);
+
                 return new ZBinaryExpression(left, right,
                     new ZBinaryOperator(EZBinaryOperator.Divide, left.Type));
             }
             else if (context.multOp().MODULO() != null)
             {
-                if (!left.Type.Implements(ZInterface.Modulable))
-                {
-                    ErrorHandler.ThrowError($"{left.Type.Name} and {right.Type.Name} do not implement the Modulable interface.", context.Start.Line, context.Start.Column, SourceCodeLines);
-                }
+                TypeChecker.TypeImplements(left.Type, ZInterface.Modulable, context.Start.Line, context.Start.Column, SourceCodeLines);
+                TypeChecker.TypeImplements(right.Type, ZInterface.Modulable, context.Start.Line, context.Start.Column, SourceCodeLines);
+
                 return new ZBinaryExpression(left, right,
                     new ZBinaryOperator(EZBinaryOperator.Modulo, left.Type));
             }
@@ -289,26 +283,24 @@ namespace Zelt.Visitors
             IZExpression right = VisitExpression(context.expression(1));
 
             // Check if the types are equal
-            if (left.Type != right.Type)
+            if (left.Type.CompareTo(right.Type) != 0)
             {
                 ErrorHandler.ThrowError($"Cannot add types {left.Type.Name} and {right.Type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
             }
 
             if (context.addOp().PLUS() != null)
             {
-                if (!left.Type.Implements(ZInterface.Additive))
-                {
-                    ErrorHandler.ThrowError($"{left.Type.Name} and {right.Type.Name} do not implement the Additive interface.", context.Start.Line, context.Start.Column, SourceCodeLines);
-                }
+                TypeChecker.TypeImplements(left.Type, ZInterface.Additive, context.Start.Line, context.Start.Column, SourceCodeLines);
+                TypeChecker.TypeImplements(right.Type, ZInterface.Additive, context.Start.Line, context.Start.Column, SourceCodeLines);
+
                 return new ZBinaryExpression(left, right,
                     new ZBinaryOperator(EZBinaryOperator.Add, left.Type));
             }
             else if (context.addOp().MINUS() != null)
             {
-                if (!left.Type.Implements(ZInterface.Subtractive))
-                {
-                    ErrorHandler.ThrowError($"{left.Type.Name} and {right.Type.Name} do not implement the Subtractive interface.", context.Start.Line, context.Start.Column, SourceCodeLines);
-                }
+                TypeChecker.TypeImplements(left.Type, ZInterface.Subtractive, context.Start.Line, context.Start.Column, SourceCodeLines);
+                TypeChecker.TypeImplements(right.Type, ZInterface.Subtractive, context.Start.Line, context.Start.Column, SourceCodeLines);
+
                 return new ZBinaryExpression(left, right,
                     new ZBinaryOperator(EZBinaryOperator.Subtract, left.Type));
             }
@@ -328,60 +320,39 @@ namespace Zelt.Visitors
             {
                 ErrorHandler.ThrowError($"Cannot compare types {left.Type.Name} and {right.Type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
             }
+            
+            // Check if the type implements the Comparable interface
+            TypeChecker.TypeImplements(left.Type, ZInterface.Comparable, context.Start.Line, context.Start.Column, SourceCodeLines);
+            TypeChecker.TypeImplements(right.Type, ZInterface.Comparable, context.Start.Line, context.Start.Column, SourceCodeLines);
 
             if (context.relOp().LESS_THAN() != null)
             {
-                if (!left.Type.Implements(ZInterface.Comparable))
-                {
-                    ErrorHandler.ThrowError($"{left.Type.Name} and {right.Type.Name} do not implement the Comparable interface.", context.Start.Line, context.Start.Column, SourceCodeLines);
-                }
                 return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.LessThan, ZType.Bool));
             }
             else if (context.relOp().LESS_THAN_OR_EQUAL() != null)
             {
-                if (!left.Type.Implements(ZInterface.Comparable))
-                {
-                    ErrorHandler.ThrowError($"{left.Type.Name} and {right.Type.Name} do not implement the Comparable interface.", context.Start.Line, context.Start.Column, SourceCodeLines);
-                }
                 return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.LessThanOrEqual, ZType.Bool));
             }
             else if (context.relOp().GREATER_THAN() != null)
             {
-                if (!left.Type.Implements(ZInterface.Comparable))
-                {
-                    ErrorHandler.ThrowError($"{left.Type.Name} and {right.Type.Name} do not implement the Comparable interface.", context.Start.Line, context.Start.Column, SourceCodeLines);
-                }
                 return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.GreaterThan, ZType.Bool));
             }
             else if (context.relOp().GREATER_THAN_OR_EQUAL() != null)
             {
-                if (!left.Type.Implements(ZInterface.Comparable))
-                {
-                    ErrorHandler.ThrowError($"{left.Type.Name} and {right.Type.Name} do not implement the Comparable interface.", context.Start.Line, context.Start.Column, SourceCodeLines);
-                }
                 return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.GreaterThanOrEqual, ZType.Bool));
             }
             else if (context.relOp().EQUALS() != null)
             {
-                if (!left.Type.Implements(ZInterface.Equatable))
-                {
-                    ErrorHandler.ThrowError($"{left.Type.Name} and {right.Type.Name} do not implement the Equatable interface.", context.Start.Line, context.Start.Column, SourceCodeLines);
-                }
                 return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.Equal, ZType.Bool));
             }
             else if (context.relOp().NOT_EQUALS() != null)
             {
-                if (!left.Type.Implements(ZInterface.Equatable))
-                {
-                    ErrorHandler.ThrowError($"{left.Type.Name} and {right.Type.Name} do not implement the Equatable interface.", context.Start.Line, context.Start.Column, SourceCodeLines);
-                }
                 return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.NotEqual, ZType.Bool));
             }
             else
             {
                 throw new NotImplementedException();
             }
-
         }
 
         public override IZExpression VisitLogicalExpression([NotNull] ZeltParser.LogicalExpressionContext context)

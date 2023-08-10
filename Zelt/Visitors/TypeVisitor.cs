@@ -35,14 +35,14 @@ namespace Zelt.Visitors
             
             // Otherwise, create a new type and set its defined to false
             // If the type is never defined, the type checker will throw an error
-            ZType newType = new ZType(context.IDENTIFIER().GetText(), null, null);
+            ZType newType = new ZType(context.IDENTIFIER().GetText(), null);
 
             Types.Add(context.IDENTIFIER().GetText(), newType);
 
             return newType;
         }
 
-        public override ZType VisitListType([NotNull] ZeltParser.ListTypeContext context)
+        public override ZListType VisitListType([NotNull] ZeltParser.ListTypeContext context)
         {
             ZType type = VisitType(context.type());
 

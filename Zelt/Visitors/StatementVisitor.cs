@@ -192,83 +192,42 @@ namespace Zelt.Visitors
             return new ZWhileStatement(condition, body);
         }
 
-        // TODO: Add support for lists before adding this
         public override IZStatement VisitEachStatement([NotNull] ZeltParser.EachStatementContext context)
         {
+
+            // 0. Setup the scope for the iterating variables
             List<ZVariable> iteratingVariables = new List<ZVariable>();
             List<IZExpression> listsToIterate = new List<IZExpression>();
-            int? expectedListLength = null;
 
             Dictionary<string, ZVariable> eachVariables = new Dictionary<string, ZVariable>(Variables);
 
-            for (int i = 0; i < context.declarationList().declaration().Length; i++)
+            // 1. Get the iterating variables
+            foreach (var declaration in context.declarationList().declaration())
             {
-                ZDeclaration iteratingVariable = new DeclarationVisitor(Types, eachVariables, SourceCodeLines).VisitDeclaration(context.declarationList().declaration(i))[0];
+                ZDeclaration iteratingVariable = new DeclarationVisitor(Types, eachVariables, SourceCodeLines).VisitDeclaration(declaration)[0];
                 iteratingVariable.Variable.IsDefined = true;
-
-                IZExpression expression = new ExpressionVisitor(Types, eachVariables, SourceCodeLines).VisitExpression(context.expressionList().expression(i));
-
-                // TODO - INTERFACES: Eventually I should just check if the expression type implements the Iterable interface
-                if (expression is ZIdentifierExpression identifierExpression)
-                {
-                    if (identifierExpression.Type is ZListType)
-                    {
-                        listsToIterate.Add(identifierExpression);
-                    }
-                    else
-                    {
-                        ErrorHandler.ThrowError("Cannot iterate over a non-list expression", context.Start.Line, context.Start.Column, SourceCodeLines);
-                    }
-                }
-                else if (expression is ZListExpression listExpression)
-                {
-                    listsToIterate.Add(listExpression);
-                }
-                else
-                {
-                    ErrorHandler.ThrowError("Cannot iterate over a non-list expression", context.Start.Line, context.Start.Column, SourceCodeLines);
-                }
-
-                IZExpression listToIterate = listsToIterate.Last();
-
-                // This is hacky as fuck
-                ZType zType = new ZType($"[{iteratingVariable.Variable.Type.Name}]", null, null);
-
-                if (zType.CompareTo(listToIterate.Type) != 0)
-                {
-                    ErrorHandler.ThrowError("Cannot iterate over a list of type " + listToIterate.Type.Name + " with a variable of type " + iteratingVariable.Variable.Type.Name, context.Start.Line, context.Start.Column, SourceCodeLines);
-                }
-
-                if (listToIterate is ZListExpression listExpr)
-                {
-                    if (expectedListLength == null)
-                    {
-                        expectedListLength = listExpr.Elements.Count();
-                    }
-                    else if (listExpr.Elements.Count() != expectedListLength)
-                    {
-                        ErrorHandler.ThrowError("Cannot iterate over lists of different lengths", context.Start.Line, context.Start.Column, SourceCodeLines);
-                    }
-                }
-                else
-                {
-                    // TODO: Find the length of the list and make sure it is the same as the expected length
-                }
-
                 iteratingVariables.Add(iteratingVariable.Variable);
+            }
+
+            // 2. Get the lists to iterate over
+            foreach (var list in context.expressionList().expression())
+            {
+                IZExpression listToIterate = new ExpressionVisitor(Types, eachVariables, SourceCodeLines).VisitExpression(list);
+
+                if (listToIterate is not ZListExpression)
+                if (listToIterate.Type is not ZListType)
+                {
+                    ErrorHandler.ThrowError("Each statement must iterate over a list", context.Start.Line, context.Start.Column, SourceCodeLines);
+                }
+
                 listsToIterate.Add(listToIterate);
             }
+
+            // 5. Visit the body
 
             // Setup the scope for the body
             List<IZStatement> body = new List<IZStatement>();
             Dictionary<string, ZVariable> bodyVariables = new Dictionary<string, ZVariable>(eachVariables);
-
-            /*
-            foreach (var variable in iteratingVariables)
-            {
-                bodyVariables.Add(variable.Name, variable);
-            }
-            */
 
             StatementVisitor visitor = new StatementVisitor(Types, eachVariables, Functions, Structs, StructInstances, SourceCodeLines);
 

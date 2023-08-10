@@ -1,8 +1,11 @@
 
 a : [Int] = [1, 2, 3];
+b : [Float] = [4.2, 5.3, 6.4];
 
 y : Int = 1;
+z : Float = 2.5;
 
-each x : Int in a {
-  y = x + 1;
+each i : Int, j: Float in a, b {
+  y = i + 1;
+  z = j + 1.5;
 }

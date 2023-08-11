@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Zelt.AST;
@@ -310,6 +311,9 @@ namespace Zelt.CodeGenerator
                 case ZFunctionExpression functionExpression:
                     GenerateCodeForFunctionExpression(functionExpression);
                     break;
+                case ZCallerExpression callerExpression:
+                    GenerateCodeForCallerExpression(callerExpression);
+                    break;
                 default:
                     throw new NotImplementedException();
             }
@@ -358,6 +362,12 @@ namespace Zelt.CodeGenerator
         {
             // Add the function keyword and parameters
             Stream.Write("function(");
+
+            if (functionExpression.Caller is not null)
+            {
+                Stream.Write("caller, ");
+            }
+
             for (int i = 0; i < functionExpression.ParameterValues.Count; i++)
             {
                 Stream.Write(functionExpression.ParameterValues[i].Name); // Assuming ParameterValue has a property called 'Name'
@@ -377,6 +387,11 @@ namespace Zelt.CodeGenerator
             }
 
             Stream.WriteLine("}");
+        }
+
+        public void GenerateCodeForCallerExpression(ZCallerExpression callerExpression)
+        {
+            Stream.Write("caller");
         }
 
         public void GenerateCodeForUnaryExpression(ZUnaryExpression expression)

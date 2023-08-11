@@ -15,16 +15,19 @@ namespace Zelt.Visitors
         public Dictionary<string, ZType> Types { get; private set; }
         public Dictionary<string, ZVariable> Variables { get; private set; }
         public string[] SourceCodeLines { get; private set; }
+        public ZType? CallerType { get; set; } = null;
 
         public ExpressionVisitor(
             Dictionary<string, ZType> types, 
             Dictionary<string, ZVariable> variables,
-            string[] sourceCodeLines
+            string[] sourceCodeLines,
+            ZType? callerType = null
         )
         {
             Types = types;
             Variables = variables;
             SourceCodeLines = sourceCodeLines;
+            CallerType = callerType;
         }
 
         public override IZExpression VisitExpression([NotNull] ZeltParser.ExpressionContext context)
@@ -77,6 +80,13 @@ namespace Zelt.Visitors
             else if (context is ZeltParser.LogicalExpressionContext logicalExpressionContext)
             {
                 return VisitLogicalExpression(logicalExpressionContext);
+            }
+            else if (context is ZeltParser.CallerExpressionContext callerExpressionContext)
+            {
+                if (CallerType == null)
+                    ErrorHandler.ThrowError("Cannot use caller expression outside of a function", callerExpressionContext.Start.Line, callerExpressionContext.Start.Column, SourceCodeLines);
+
+                return new ZCallerExpression(CallerType ?? ZType.Null);
             }
             else if (context is ZeltParser.UnderscoreExpressionContext underscoreExpressionContext)
             {
@@ -195,7 +205,7 @@ namespace Zelt.Visitors
                 }
                 else if (parameter.assignment() is not null)
                 {
-                    List<ZAssignment> assignments = new AssignmentVisitor(Types, variables, SourceCodeLines).VisitAssignment(parameter.assignment());
+                    List<ZAssignment> assignments = new AssignmentVisitor(Types, variables, SourceCodeLines, CallerType).VisitAssignment(parameter.assignment());
                     foreach (var (assignment, position) in assignments.Select((a, i) => (a, i)))
                     {
                         parameterValues.Add(new ZParameterValue(assignment.Variable.Name, assignment.Variable.Type, assignment.Expression, position));
@@ -203,7 +213,7 @@ namespace Zelt.Visitors
                 }
                 else if (parameter.inferAssignment() is not null)
                 {
-                    List<ZAssignment> assignments = new AssignmentVisitor(Types, variables, SourceCodeLines).VisitInferAssignment(parameter.inferAssignment());
+                    List<ZAssignment> assignments = new AssignmentVisitor(Types, variables, SourceCodeLines, CallerType).VisitInferAssignment(parameter.inferAssignment());
                     foreach (var (assignment, position) in assignments.Select((a, i) => (a, i)))
                     {
                         parameterValues.Add(new ZParameterValue(assignment.Variable.Name, assignment.Variable.Type, assignment.Expression, position));
@@ -222,6 +232,13 @@ namespace Zelt.Visitors
                 returnTypes.Add(new TypeVisitor(Types, SourceCodeLines).Visit(returnType));
             }
 
+            // If caller exists, add it to the function
+            ZType? caller = null;
+            if (context.function().type() != null)
+            {
+                caller = new TypeVisitor(Types, SourceCodeLines).Visit(context.function().type());
+            }
+
             // Get the function body
             List<IZStatement> body = new List<IZStatement>();
 
@@ -237,7 +254,10 @@ namespace Zelt.Visitors
                     bodyVariables.Add(parameter.Name, new ZVariable(parameter.Name, parameter.Type, true));
                 }
 
-                StatementVisitor visitor = new StatementVisitor(Types, bodyVariables, SourceCodeLines);
+                if (caller is not null)
+                    bodyVariables.Add("caller", new ZVariable("caller", caller, true));
+
+                StatementVisitor visitor = new StatementVisitor(Types, bodyVariables, SourceCodeLines, caller);
 
                 foreach (var statement in context.function().block().statement())
                 {
@@ -267,13 +287,6 @@ namespace Zelt.Visitors
 
                 // Type check the body -- is this necessary?
                 TypeChecker.CheckVariableDeclarationTypes(bodyVariables, SourceCodeLines);
-            }
-
-            // If caller exists, add it to the function
-            ZType? caller = null;
-            if (context.function().type() != null)
-            {
-                caller = new TypeVisitor(Types, SourceCodeLines).Visit(context.function().type());
             }
 
             // Create a new function

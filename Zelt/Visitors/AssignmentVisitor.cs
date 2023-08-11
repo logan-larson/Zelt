@@ -14,12 +14,14 @@ namespace Zelt.Visitors
         public Dictionary<string, ZType> Types { get; private set; }
         public Dictionary<string, ZVariable> Variables { get; private set; }
         public string[] SourceCodeLines { get; private set; }
+        public ZType? CallerType { get; private set; }
 
-        public AssignmentVisitor(Dictionary<string, ZType> types, Dictionary<string, ZVariable> variables, string[] sourceCodeLines)
+        public AssignmentVisitor(Dictionary<string, ZType> types, Dictionary<string, ZVariable> variables, string[] sourceCodeLines, ZType? callerType = null)
         {
             Types = types;
             Variables = variables;
             SourceCodeLines = sourceCodeLines;
+            CallerType = callerType;
         }
 
         public override List<ZAssignment> VisitAssignment([NotNull] ZeltParser.AssignmentContext context)
@@ -63,7 +65,7 @@ namespace Zelt.Visitors
             List<IZExpression> expressions = new List<IZExpression>();
             foreach (var expression in context.expressionList().expression())
             {
-                expressions.Add(new ExpressionVisitor(Types, Variables, SourceCodeLines).VisitExpression(expression));
+                expressions.Add(new ExpressionVisitor(Types, Variables, SourceCodeLines, CallerType).VisitExpression(expression));
             }
 
             // Check if the number of identifiers and expressions match
@@ -115,7 +117,7 @@ namespace Zelt.Visitors
             List<IZExpression> expressions = new List<IZExpression>();
             foreach (var expression in context.expressionList().expression())
             {
-                expressions.Add(new ExpressionVisitor(Types, Variables, SourceCodeLines).VisitExpression(expression));
+                expressions.Add(new ExpressionVisitor(Types, Variables, SourceCodeLines, CallerType).VisitExpression(expression));
             }
 
             // Check if the number of identifiers and expressions match
@@ -167,7 +169,7 @@ namespace Zelt.Visitors
             List<IZExpression> expressions = new List<IZExpression>();
             foreach (var expression in context.expressionList().expression())
             {
-                expressions.Add(new ExpressionVisitor(Types, Variables, SourceCodeLines).VisitExpression(expression));
+                expressions.Add(new ExpressionVisitor(Types, Variables, SourceCodeLines, CallerType).VisitExpression(expression));
             }
 
             // Check if the number of identifiers and expressions match

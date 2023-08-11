@@ -32,15 +32,20 @@ namespace Zelt.Visitors
 
         public string[] SourceCodeLines { get; private set; }
 
+        // Used to keep track of the type of the variable that called the current function
+        public ZType CallerType { get; private set; } = ZType.Null;
+
         public StatementVisitor(
             Dictionary<string, ZType> types,
             Dictionary<string, ZVariable> variables,
-            string[] sourceCodeLines
+            string[] sourceCodeLines,
+            ZType? callerType = null
         )
         {
             Types = types;
             Variables = variables;
             SourceCodeLines = sourceCodeLines;
+            CallerType = callerType ?? ZType.Null;
         }
 
         public override ZDeclarationStatement VisitDeclarationStatement([NotNull] ZeltParser.DeclarationStatementContext context)
@@ -56,7 +61,7 @@ namespace Zelt.Visitors
 
             if (context.assignment() != null)
             {
-                assignments = new AssignmentVisitor(Types, Variables, SourceCodeLines).VisitAssignment(context.assignment());
+                assignments = new AssignmentVisitor(Types, Variables, SourceCodeLines, CallerType).VisitAssignment(context.assignment());
 
                 // Add assignments to the known variables
                 foreach (ZAssignment assignment in assignments)
@@ -68,7 +73,7 @@ namespace Zelt.Visitors
             }
             else if (context.inferAssignment() != null)
             {
-                assignments = new AssignmentVisitor(Types, Variables, SourceCodeLines).VisitInferAssignment(context.inferAssignment());
+                assignments = new AssignmentVisitor(Types, Variables, SourceCodeLines, CallerType).VisitInferAssignment(context.inferAssignment());
 
                 // Add assignments to the known variables
                 foreach (ZAssignment assignment in assignments)
@@ -80,7 +85,7 @@ namespace Zelt.Visitors
             }
             else if (context.simpleAssignment() != null)
             {
-                assignments = new AssignmentVisitor(Types, Variables, SourceCodeLines).VisitSimpleAssignment(context.simpleAssignment());
+                assignments = new AssignmentVisitor(Types, Variables, SourceCodeLines, CallerType).VisitSimpleAssignment(context.simpleAssignment());
 
                 return new ZAssignmentStatement(assignments);
             }
@@ -95,7 +100,7 @@ namespace Zelt.Visitors
 
             if (context.expression() != null)
             {
-                ExpressionVisitor expressionVisitor = new ExpressionVisitor(Types, Variables, SourceCodeLines);
+                ExpressionVisitor expressionVisitor = new ExpressionVisitor(Types, Variables, SourceCodeLines, CallerType);
                 foreach (var (expressionContext, position) in context.expression().Select((e, p) => (e, p)))
                 {
                     IZExpression expression = expressionVisitor.VisitExpression(expressionContext);
@@ -108,7 +113,7 @@ namespace Zelt.Visitors
 
         public override IZStatement VisitIfStatement([NotNull] ZeltParser.IfStatementContext context)
         {
-            IZExpression condition = new ExpressionVisitor(Types, Variables, SourceCodeLines).VisitExpression(context.expression());
+            IZExpression condition = new ExpressionVisitor(Types, Variables, SourceCodeLines, CallerType).VisitExpression(context.expression());
 
             // If the condition is not a boolean, throw an error
             if (condition.Type != ZType.Bool)
@@ -172,7 +177,7 @@ namespace Zelt.Visitors
 
         public override IZStatement VisitWhileStatement([NotNull] ZeltParser.WhileStatementContext context)
         {
-            IZExpression condition = new ExpressionVisitor(Types, Variables, SourceCodeLines).VisitExpression(context.expression());
+            IZExpression condition = new ExpressionVisitor(Types, Variables, SourceCodeLines, CallerType).VisitExpression(context.expression());
 
             // If the condition is not a boolean, throw an error
             if (condition.Type != ZType.Bool)
@@ -221,7 +226,7 @@ namespace Zelt.Visitors
             // 2. Get the lists to iterate over
             foreach (var list in context.expressionList().expression())
             {
-                IZExpression listToIterate = new ExpressionVisitor(Types, eachVariables, SourceCodeLines).VisitExpression(list);
+                IZExpression listToIterate = new ExpressionVisitor(Types, eachVariables, SourceCodeLines, CallerType).VisitExpression(list);
 
                 if (listToIterate is not ZListExpression)
                 if (listToIterate.Type is not ZListType)

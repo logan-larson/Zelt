@@ -169,6 +169,9 @@ expression
 	// myVector2.x, _window.length, caller.y
 	| accessor									#accessorExpression
 
+	// caller
+	| CALLER									#callerExpression
+
 	// x, y, z, _a, _b, _c
 	| IDENTIFIER								#identifierExpression
 

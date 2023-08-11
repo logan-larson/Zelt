@@ -96,6 +96,16 @@ namespace Zelt.AST
         }
     }
 
+    public class ZCallerExpression : IZExpression
+    {
+        public ZType Type { get; }
+
+        public ZCallerExpression(ZType type)
+        {
+            Type = type;
+        }
+    }
+
 
     /*
     public class ZFunctionExpression : IZExpression

@@ -30,109 +30,6 @@ namespace Zelt.AST
         }
     }
 
-    public class ZType : IComparable<ZType>
-    {
-        public string Name;
-        public List<ZInterface> Interfaces;
-        public bool IsDefined;
-
-        public ZType(string name, List<ZInterface>? interfaces, bool isDefined = false)
-        {
-            Name = name;
-            Interfaces = interfaces ?? new List<ZInterface>();
-            IsDefined = isDefined;
-        }
-
-        // Primitive types
-        public static ZType Int = new ZType("Int", new List<ZInterface>()
-        {
-            ZInterface.Multiplicative,
-            ZInterface.Divisive,
-            ZInterface.Modulable,
-            ZInterface.Additive,
-            ZInterface.Subtractive,
-            ZInterface.Comparable,
-            ZInterface.Equatable,
-        }, true);
-        public static ZType Float = new ZType("Float", new List<ZInterface>()
-        {
-            ZInterface.Multiplicative,
-            ZInterface.Divisive,
-            ZInterface.Modulable,
-            ZInterface.Additive,
-            ZInterface.Subtractive,
-            ZInterface.Comparable,
-            ZInterface.Equatable,
-        }, true);
-        public static ZType String = new ZType("String", new List<ZInterface>()
-        {
-            ZInterface.Additive,
-            ZInterface.Comparable,
-            ZInterface.Equatable,
-        }, true);
-        public static ZType Bool = new ZType("Bool", new List<ZInterface>()
-        {
-            ZInterface.Equatable,
-            ZInterface.Negatable,
-        }, true);
-        public static ZType Null = new ZType("Null", null, true);
-        public static ZType Any = new ZType("Any", null, true); // Might have to use this for an empty type e.g. a := [] -- would be a := [Any] for now
-        /*
-        public static ZType Void = new ZType("void", null, true);
-        public static ZType Char = new ZType("char", null, true);
-        public static ZType Any = new ZType("any", null, true);
-        */
-
-        public int CompareTo(ZType? other)
-        {
-            if (other == null)
-            {
-                return -1;
-            }
-
-            if (Name == other.Name)
-            {
-                return 0;
-            }
-
-            return -1;
-        }
-
-        public bool Implements(ZInterface other)
-        {
-            // If the type implements the interface directly
-            foreach (var @interface in Interfaces)
-            {
-                if (@interface.CompareTo(other) != 0)
-                    return true;
-            }
-
-            // If the type implements the interface through one of its interfaces' parent interfaces
-            foreach (var i in Interfaces)
-            {
-                if (i.Implements(other))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-    }
-
-    public class ZListType : ZType
-    {
-        public ZType ElementType;
-
-        public ZListType(ZType? elementType, List<ZInterface>? interfaces = null)
-            : base(
-                  $"[{elementType?.Name}]", interfaces ?? new List<ZInterface>() { ZInterface.Iterable }, true
-            )
-        {
-            ElementType = elementType ?? ZType.Any;
-        }
-    }
-
     public class ZInterface : IComparable<ZInterface>
     {
         public string Name;
@@ -166,6 +63,7 @@ namespace Zelt.AST
         public static ZInterface Negatable = new ZInterface("Negatable"); // !
 
         public static ZInterface Iterable = new ZInterface("Iterable");
+        public static ZInterface Invocable = new ZInterface("Invocable");
 
         public int CompareTo(ZInterface? other)
         {
@@ -216,17 +114,17 @@ namespace Zelt.AST
         public string Name;
         public List<ZVariable> Variables;
         // IDK where these should go
-        public List<ZFunction> Functions;
+        //public List<ZFunction> Functions;
         public List<ZInterface> Interfaces;
-        public ZFunction Constructor;
+        //public ZFunction Constructor;
 
         public ZStruct(string name)
         {
             Name = name;
             Variables = new List<ZVariable>();
-            Functions = new List<ZFunction>();
+            //Functions = new List<ZFunction>();
             Interfaces = new List<ZInterface>();
-            Constructor = new ZFunction();
+            //Constructor = new ZFunction();
         }
     }
 
@@ -284,6 +182,7 @@ namespace Zelt.AST
         }
     }
 
+    /*
     public class ZFunction
     {
         public ZVariable CallerName;
@@ -295,15 +194,14 @@ namespace Zelt.AST
         public ZFunction()
         {
             throw new NotImplementedException();
-            /*
             CallerName = new ZVariable();
             Name = "";
             ParameterValues = new List<ZParameterValue>();
             ReturnValues = new List<ZReturnValue>();
             Body = new List<IZStatement>();
-            */
         }
     }
+    */
 
     public class ZStructConstructor
     {

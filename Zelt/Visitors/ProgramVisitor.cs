@@ -22,9 +22,6 @@ namespace Zelt.Visitors
 
         // Global scope variables, functions, structs (type definitions)
         public Dictionary<string, ZVariable> Variables { get; private set; } = new Dictionary<string, ZVariable>();
-        public Dictionary<string, ZFunction> Functions { get; private set; } = new Dictionary<string, ZFunction>();
-        public Dictionary<string, ZStruct> Structs { get; private set; } = new Dictionary<string, ZStruct>();
-        public Dictionary<string, ZStructInstance> StructInstances { get; private set; } = new Dictionary<string, ZStructInstance>();
 
         public string[] SourceCodeLines { get; private set; }
 
@@ -38,7 +35,7 @@ namespace Zelt.Visitors
             ZProgram program = new ZProgram();
             // Visit each statement in the program
 
-            StatementVisitor statementVisitor = new StatementVisitor(Types, Variables, Functions, Structs, StructInstances, SourceCodeLines);
+            StatementVisitor statementVisitor = new StatementVisitor(Types, Variables, SourceCodeLines);
 
             foreach (ZeltParser.StatementContext statement in context.statement())
             {

@@ -29,26 +29,16 @@ namespace Zelt.Visitors
         // This represents the variables that are currently in scope
         public Dictionary<string, ZVariable> Variables { get; private set; } = new Dictionary<string, ZVariable>();
 
-        public Dictionary<string, ZFunction> Functions { get; private set; } = new Dictionary<string, ZFunction>();
-        public Dictionary<string, ZStruct> Structs { get; private set; } = new Dictionary<string, ZStruct>();
-        public Dictionary<string, ZStructInstance> StructInstances { get; private set; } = new Dictionary<string, ZStructInstance>();
-
         public string[] SourceCodeLines { get; private set; }
 
         public StatementVisitor(
             Dictionary<string, ZType> types,
             Dictionary<string, ZVariable> variables,
-            Dictionary<string, ZFunction> functions,
-            Dictionary<string, ZStruct> structs,
-            Dictionary<string, ZStructInstance> structInstances, 
             string[] sourceCodeLines
         )
         {
             Types = types;
             Variables = variables;
-            Functions = functions;
-            Structs = structs;
-            StructInstances = structInstances;
             SourceCodeLines = sourceCodeLines;
         }
 
@@ -112,7 +102,7 @@ namespace Zelt.Visitors
 
             // Setup the scope for the true body
             Dictionary<string, ZVariable> trueVariables = new Dictionary<string, ZVariable>(Variables);
-            StatementVisitor trueVisitor = new StatementVisitor(Types, trueVariables, Functions, Structs, StructInstances, SourceCodeLines);
+            StatementVisitor trueVisitor = new StatementVisitor(Types, trueVariables, SourceCodeLines);
 
             // If there is a true body, visit it
             if (context.block() != null)
@@ -132,7 +122,7 @@ namespace Zelt.Visitors
 
             // Setup the scope for the false body
             Dictionary<string, ZVariable> falseVariables = new Dictionary<string, ZVariable>(Variables);
-            StatementVisitor falseVisitor = new StatementVisitor(Types, falseVariables, Functions, Structs, StructInstances, SourceCodeLines);
+            StatementVisitor falseVisitor = new StatementVisitor(Types, falseVariables, SourceCodeLines);
 
             if (context.elseIfStatement().ifStatement() != null)
             {
@@ -175,7 +165,7 @@ namespace Zelt.Visitors
 
             // Setup the scope for the body
             Dictionary<string, ZVariable> bodyVariables = new Dictionary<string, ZVariable>(Variables);
-            StatementVisitor visitor = new StatementVisitor(Types, bodyVariables, Functions, Structs, StructInstances, SourceCodeLines);
+            StatementVisitor visitor = new StatementVisitor(Types, bodyVariables, SourceCodeLines);
 
             // If there is a body, visit it
             if (context.block() != null)
@@ -229,7 +219,7 @@ namespace Zelt.Visitors
             List<IZStatement> body = new List<IZStatement>();
             Dictionary<string, ZVariable> bodyVariables = new Dictionary<string, ZVariable>(eachVariables);
 
-            StatementVisitor visitor = new StatementVisitor(Types, eachVariables, Functions, Structs, StructInstances, SourceCodeLines);
+            StatementVisitor visitor = new StatementVisitor(Types, eachVariables, SourceCodeLines);
 
             // If there is a body, visit it
             if (context.block() != null)

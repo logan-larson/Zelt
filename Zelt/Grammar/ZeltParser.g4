@@ -13,11 +13,11 @@ statement
 	: declarationStatement
 	| assignmentStatement
 	| controlFlowStatement
-	| functionCallStatement
+	//| functionCallStatement
 	| printStatement
 	| interfaceDeclaration
 	| structDeclaration
-	| functionDeclaration
+	//| functionDeclaration
 	| returnStatement
 	;
 
@@ -69,16 +69,16 @@ declaration
 	: identifierList COLON typeList
 	; 
 
-functionDeclaration
+function
 
-	// add(x : Int, y : Int) => Int { return x + y; }
-	: functionIdentifier LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
+	// (x : Int, y : Int) => Int { return x + y; }
+	: LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
 
-	// Vector2 add(v : Vector2) => Vector2 { return Vector2(caller.x + x, caller.y + y); }
-	| type functionIdentifier LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
+	// Vector2 (v : Vector2) => Vector2 { return Vector2(caller.x + x, caller.y + y); }
+	| type LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
 
 	// (x : Int) => Int { return x * x; }
-	| LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
+	//| LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
 	;
 
 interfaceDeclaration
@@ -172,6 +172,9 @@ expression
 	// x, y, z, _a, _b, _c
 	| IDENTIFIER								#identifierExpression
 
+	// (x : Int) => Int { return x * x; }, Int (y : Int) => Int { return caller + y; }
+	| function									#functionExpression
+
 	// add(x, Vector2(), 6) -- Vector2() is a function call to the Vector2 'constructor'
 	| functionCall								#functionCallExpression
 
@@ -203,7 +206,7 @@ expression
 // ---------------------------------------------------------------------------------------------
 
 typeList
-	// Int, Float, Int
+	// Int, Float, [Int], (Int, Int) => Int, Int (Int) => Int
 	: type (COMMA type)*
 	;
 
@@ -218,10 +221,10 @@ returnTypeList
 	;
 
 type
-	// String (Int, Int) -> Int, Int -- function type with a caller type
+	// String (Int, Int) => Int, Int -- function type with a caller type
 	: functionCallerType
 
-	// (Int, Int) -> Int, Int -- function type without a caller type
+	// (Int, Int) => Int, Int -- function type without a caller type
 	| functionType
 
 	// [Int] -- list type
@@ -234,13 +237,18 @@ type
 	| IDENTIFIER
 	;
 
+callerType
+	: IDENTIFIER
+	;
+
 functionCallerType
-	// String (Int, Int) -> Int, Int -- function type with a caller type
-	: IDENTIFIER LEFT_PAREN parameterTypeList RIGHT_PAREN DOUBLE_ARROW returnTypeList
+	// String (Int, Int) => Int, Int -- function type with a caller type
+	// What happens if the IDENTIFIER is a type??
+	: callerType LEFT_PAREN parameterTypeList RIGHT_PAREN DOUBLE_ARROW returnTypeList
 	;
 
 functionType
-	// (Int, Int) -> Int, Int -- function type without a caller type
+	// (Int, Int) => Int, Int -- function type without a caller type
 	: LEFT_PAREN parameterTypeList RIGHT_PAREN DOUBLE_ARROW returnTypeList
 	;
 

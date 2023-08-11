@@ -65,6 +65,36 @@ namespace Zelt.AST
         }
     }
 
+    public class ZFunctionExpression : IZExpression
+    {
+        // Type
+        public ZType Type { get; }
+
+        // Parameters -- Are these assignments or declarations?
+        // (x : Int, y : Int) => { x + y }      --- parameters as declarations
+        // (x := 1, y := 2) => Int { x + y }    --- parameters as assignments, when you allow default values
+        public List<ZDeclaration> Parameters;
+
+        // Return types
+        public List<ZType> ReturnTypes;
+
+        // Body
+        public List<IZStatement> Body;
+
+        // Caller type -- null if no caller type is specified
+        public ZType? CallerType;
+
+        public ZFunctionExpression(ZType type, List<ZDeclaration> parameters, List<ZType> returnTypes, List<IZStatement> body, ZType? callerType)
+        {
+            Type = type;
+            Parameters = parameters;
+            ReturnTypes = returnTypes;
+            Body = body;
+            CallerType = callerType;
+        }
+
+    }
+
     public class ZListExpression : IZExpression
     {
         public ZType Type { get; }

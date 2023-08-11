@@ -65,6 +65,39 @@ namespace Zelt.AST
         }
     }
 
+
+    public class ZFunctionExpression : IZExpression
+    {
+        public ZType Type { get; }
+
+        public ZType? Caller;
+        public List<ZParameterValue> ParameterValues;
+        public List<ZType> ReturnTypes;
+        public List<IZStatement> Body;
+
+        /*
+        public ZFunctionExpression(List<ZParameterValue> parameterValues, List<ZType> returnTypes, List<IZStatement> body, ZType type)
+        {
+            ParameterValues = parameterValues;
+            ReturnTypes = returnTypes;
+            Body = body;
+            Caller = null;
+            Type = type;
+        }
+        */
+
+        public ZFunctionExpression(List<ZParameterValue> parameterValues, List<ZType> returnTypes, List<IZStatement> body, ZType? caller, ZType type)
+        {
+            ParameterValues = parameterValues;
+            ReturnTypes = returnTypes;
+            Body = body;
+            Caller = caller;
+            Type = type;
+        }
+    }
+
+
+    /*
     public class ZFunctionExpression : IZExpression
     {
         // Type
@@ -94,6 +127,7 @@ namespace Zelt.AST
         }
 
     }
+    */
 
     public class ZListExpression : IZExpression
     {

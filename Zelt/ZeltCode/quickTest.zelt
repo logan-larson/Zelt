@@ -1,11 +1,4 @@
 
-a : [Int] = [1, 2, 3];
-b : [Float] = [4.2, 5.3, 6.4];
-
-y : Int = 1;
-z : Float = 2.5;
-
-each i : Int, j: Float in a, b {
-  y = i + 1;
-  z = j + 1.5;
-}
+a := (x : Int) => Int {
+	return x + 1;
+};

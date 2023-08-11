@@ -74,6 +74,10 @@ namespace Zelt.CodeGenerator
             {
                 GenerateCodeForEachStatement(eachStatement);
             }
+            else if (statement is ZReturnStatement returnStatement)
+            {
+                GenerateCodeForReturnStatement(returnStatement);
+            }
             /*
             else if (statement is ZExpressionStatement)
             {
@@ -235,6 +239,19 @@ namespace Zelt.CodeGenerator
             Stream.WriteLine("}");
         }
 
+        public void GenerateCodeForReturnStatement(ZReturnStatement statement)
+        {
+            Stream.Write("return [");
+            foreach (var (expression, index) in statement.ReturnValues.Select((e, i) => (e, i)))
+            {
+                GenerateCodeForExpression(expression.Expression);
+
+                if (index < statement.ReturnValues.Count - 1)
+                    Stream.Write(", ");
+            }
+            Stream.WriteLine("];");
+        }
+
         // -------------------- Assignments and Declarations ----------------------
 
         public void GenerateCodeForDeclaration(ZDeclaration declaration)
@@ -290,6 +307,9 @@ namespace Zelt.CodeGenerator
                 case ZListExpression listExpression:
                     GenerateCodeForListExpression(listExpression);
                     break;
+                case ZFunctionExpression functionExpression:
+                    GenerateCodeForFunctionExpression(functionExpression);
+                    break;
                 default:
                     throw new NotImplementedException();
             }
@@ -332,6 +352,31 @@ namespace Zelt.CodeGenerator
                 }
             }
             Stream.Write("]");
+        }
+
+        public void GenerateCodeForFunctionExpression(ZFunctionExpression functionExpression)
+        {
+            // Add the function keyword and parameters
+            Stream.Write("function(");
+            for (int i = 0; i < functionExpression.ParameterValues.Count; i++)
+            {
+                Stream.Write(functionExpression.ParameterValues[i].Name); // Assuming ParameterValue has a property called 'Name'
+
+                if (i < functionExpression.ParameterValues.Count - 1)
+                {
+                    Stream.Write(", ");
+                }
+            }
+            Stream.WriteLine(") {");
+
+            // Add the function body
+            foreach (IZStatement statement in functionExpression.Body)
+            {
+                // Assuming there is a method to generate code for each statement
+                GenerateCodeForStatement(statement);
+            }
+
+            Stream.WriteLine("}");
         }
 
         public void GenerateCodeForUnaryExpression(ZUnaryExpression expression)

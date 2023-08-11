@@ -11,6 +11,7 @@ using Antlr4.Runtime.Tree;
 using System.Runtime.CompilerServices;
 using System.Xml.Schema;
 using System.ComponentModel.Design;
+using System.ComponentModel;
 
 namespace Zelt.Visitors
 {
@@ -85,6 +86,24 @@ namespace Zelt.Visitors
             }
 
             throw new NotImplementedException();
+        }
+
+
+        public override IZStatement VisitReturnStatement([NotNull] ZeltParser.ReturnStatementContext context)
+        {
+            List<ZReturnValue> returnValues = new List<ZReturnValue>();
+
+            if (context.expression() != null)
+            {
+                ExpressionVisitor expressionVisitor = new ExpressionVisitor(Types, Variables, SourceCodeLines);
+                foreach (var (expressionContext, position) in context.expression().Select((e, p) => (e, p)))
+                {
+                    IZExpression expression = expressionVisitor.VisitExpression(expressionContext);
+                    returnValues.Add(new ZReturnValue(expression.Type, expression, position));
+                }
+            }
+
+            return new ZReturnStatement(returnValues);
         }
 
         public override IZStatement VisitIfStatement([NotNull] ZeltParser.IfStatementContext context)

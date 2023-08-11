@@ -181,28 +181,6 @@ namespace Zelt.AST
             Type = type;
         }
     }
-
-    /*
-    public class ZFunction
-    {
-        public ZVariable CallerName;
-        public string Name;
-        public List<ZParameterValue> ParameterValues;
-        public List<ZReturnValue> ReturnValues;
-        public List<IZStatement> Body;
-
-        public ZFunction()
-        {
-            throw new NotImplementedException();
-            CallerName = new ZVariable();
-            Name = "";
-            ParameterValues = new List<ZParameterValue>();
-            ReturnValues = new List<ZReturnValue>();
-            Body = new List<IZStatement>();
-        }
-    }
-    */
-
     public class ZStructConstructor
     {
         public ZStruct Struct;
@@ -244,10 +222,11 @@ namespace Zelt.AST
     {
         public string Name;
         public ZType Type;
-        public IZExpression Expression;
+        public IZExpression? Expression;
         public int Position;
 
-        public ZParameterValue(string name, ZType type, IZExpression expression, int position)
+        // Expression can be null if the parameter is not defined, i.e. no default value
+        public ZParameterValue(string name, ZType type, IZExpression? expression, int position)
         {
             Name = name;
             Type = type;
@@ -305,6 +284,16 @@ namespace Zelt.AST
         public ZAssignmentStatement(List<ZAssignment> assignments)
         {
             Assignments = assignments;
+        }
+    }
+
+    public class ZReturnStatement : IZStatement
+    {
+        public List<ZReturnValue> ReturnValues;
+
+        public ZReturnStatement(List<ZReturnValue> returnValues)
+        {
+            ReturnValues = returnValues;
         }
     }
 

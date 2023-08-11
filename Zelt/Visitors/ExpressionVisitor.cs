@@ -1,6 +1,7 @@
 ﻿using Antlr4.Runtime.Misc;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -45,10 +46,13 @@ namespace Zelt.Visitors
             {
                 return VisitIdentifierExpression(identifierExpressionContext);
             }
+            else if (context is ZeltParser.FunctionExpressionContext functionExpressionContext)
+            {
+                return VisitFunctionExpression(functionExpressionContext);
+            }
             else if (context is ZeltParser.FunctionCallExpressionContext functionCallExpressionContext)
             {
-                //return new FunctionCallVisitor(Types, Variables, Functions).VisitFunctionCall(functionCallExpressionContext.functionCall());
-                throw new NotImplementedException();
+                return VisitFunctionCallExpression(functionCallExpressionContext);
             }
             else if (context is ZeltParser.ParenExpressionContext parenExpressionContext)
             {
@@ -174,37 +178,109 @@ namespace Zelt.Visitors
             return new ZListExpression(listElements, elementType ?? ZType.Null);
         }
 
-        /*
-        public override IZExpression VisitList([NotNull] ZeltParser.ListContext context)
+        public override IZExpression VisitFunctionExpression([NotNull] ZeltParser.FunctionExpressionContext context)
         {
-            if (context.listElement() == null)
+            Dictionary<string, ZVariable> variables = new Dictionary<string, ZVariable>(Variables);
+            // Get parameter values
+            List<ZParameterValue> parameterValues = new List<ZParameterValue>();
+            foreach (var parameter in context.function().parameterDeclarationList().parameterDeclaration())
             {
-                return new ZListExpression(new List<IZExpression>(), Types["List"]);
-            }
-
-            // Get the type of the list from the first element
-            ZType type = Types[context.listElement().GetText()];
-
-            // Get the expressions in the list
-            List<IZExpression> expressions = new List<IZExpression>();
-            foreach (ZeltParser.ExpressionContext expressionContext in context.expression())
-            {
-                expressions.Add(VisitExpression(expressionContext));
-            }
-
-            // Check if the types of the expressions are equal to the type of the list
-            foreach (IZExpression expression in expressions)
-            {
-                if (expression.Type != type)
+                if (parameter.declaration() is not null)
                 {
-                    ErrorHandler.ThrowError($"Cannot add type {expression.Type.Name} to list of type {type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
+                    List<ZDeclaration> declarations = new DeclarationVisitor(Types, variables, SourceCodeLines).VisitDeclaration(parameter.declaration());
+                    foreach (var (declaration, position) in declarations.Select((d, i) => (d, i)))
+                    {
+                        parameterValues.Add(new ZParameterValue(declaration.Variable.Name, declaration.Variable.Type, null, position));
+                    }
+                }
+                else if (parameter.assignment() is not null)
+                {
+                    List<ZAssignment> assignments = new AssignmentVisitor(Types, variables, SourceCodeLines).VisitAssignment(parameter.assignment());
+                    foreach (var (assignment, position) in assignments.Select((a, i) => (a, i)))
+                    {
+                        parameterValues.Add(new ZParameterValue(assignment.Variable.Name, assignment.Variable.Type, assignment.Expression, position));
+                    }
+                }
+                else if (parameter.inferAssignment() is not null)
+                {
+                    List<ZAssignment> assignments = new AssignmentVisitor(Types, variables, SourceCodeLines).VisitInferAssignment(parameter.inferAssignment());
+                    foreach (var (assignment, position) in assignments.Select((a, i) => (a, i)))
+                    {
+                        parameterValues.Add(new ZParameterValue(assignment.Variable.Name, assignment.Variable.Type, assignment.Expression, position));
+                    }
+                }
+                else
+                {
+                    throw new NotImplementedException();
                 }
             }
 
-            // Return the list as an expression
-            return new ZListExpression(expressions, type);
+            // Get return types
+            List<ZType> returnTypes = new List<ZType>();
+            foreach (var returnType in context.function().typeList().type())
+            {
+                returnTypes.Add(new TypeVisitor(Types, SourceCodeLines).Visit(returnType));
+            }
+
+            // Get the function body
+            List<IZStatement> body = new List<IZStatement>();
+
+            // If there is a body, visit it
+            if (context.function().block() != null)
+            {
+                // Setup the scope for the body
+                Dictionary<string, ZVariable> bodyVariables = new Dictionary<string, ZVariable>(Variables);
+
+                // Add the parameters to the body scope
+                foreach (var parameter in parameterValues)
+                {
+                    bodyVariables.Add(parameter.Name, new ZVariable(parameter.Name, parameter.Type, true));
+                }
+
+                StatementVisitor visitor = new StatementVisitor(Types, bodyVariables, SourceCodeLines);
+
+                foreach (var statement in context.function().block().statement())
+                {
+                    // If the statement is a return statement, check if it is valid
+                     IZStatement zStatement = visitor.Visit(statement);
+
+                    if (zStatement is ZReturnStatement returnStatement)
+                    {
+                        // Check that the length of the return statement matches the length of the return types
+                        if (returnStatement.ReturnValues.Count != returnTypes.Count)
+                        {
+                            ErrorHandler.ThrowError("The number of return values does not match the number of return types", context.Start.Line, context.Start.Column, SourceCodeLines);
+                        }
+
+                        // Check if the return types of the expressions match the return types of the function
+                        foreach (var (returnValue, returnType) in returnStatement.ReturnValues.Zip(returnTypes))
+                        {
+                            if (returnValue.Type.CompareTo(returnType) != 0)
+                            {
+                                ErrorHandler.ThrowError("The return type does not match the return type of the function", context.Start.Line, context.Start.Column, SourceCodeLines);
+                            }
+                        }
+                    }
+
+                    body.Add(zStatement);
+                }
+
+                // Type check the body -- is this necessary?
+                TypeChecker.CheckVariableDeclarationTypes(bodyVariables, SourceCodeLines);
+            }
+
+            // If caller exists, add it to the function
+            ZType? caller = null;
+            if (context.function().type() != null)
+            {
+                caller = new TypeVisitor(Types, SourceCodeLines).Visit(context.function().type());
+            }
+
+            // Create a new function
+            ZFunctionType functionType = new ZFunctionType(parameterValues.Select(p => p.Type).ToList(), returnTypes);
+
+            return new ZFunctionExpression(parameterValues, returnTypes, body, caller, functionType);
         }
-        */
 
         public override IZExpression VisitIdentifierExpression([NotNull] ZeltParser.IdentifierExpressionContext context)
         {

@@ -49,6 +49,33 @@ namespace Zelt.AST
             }
         }
 
+        public static void TypeImplementsAny(ZType type, List<ZInterface> interfaces, int line, int column, string[] sourceCodeLines)
+        {
+            if (type == null)
+            {
+                ErrorHandler.ThrowError($"Type provided is null.", line, column, sourceCodeLines);
+                return;
+            }
+
+            if (interfaces == null)
+            {
+                ErrorHandler.ThrowError($"Interfaces provided is null.", line, column, sourceCodeLines);
+                return;
+            }
+
+            foreach (var @interface in interfaces)
+            {
+                if (type.Implements(@interface))
+                {
+                    return;
+                }
+            }
+
+            string interfacesString = string.Join(", ", interfaces.Select(i => i.Name));
+
+            ErrorHandler.ThrowError($"{type.Name} does not implement any of these: {interfacesString}", line, column, sourceCodeLines);
+        }
+
         /*
         public static void TypeEquals(ZType first, ZType second, int line, int column, string[] sourceCodeLines)
         {

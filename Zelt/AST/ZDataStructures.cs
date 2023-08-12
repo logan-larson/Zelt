@@ -61,6 +61,7 @@ namespace Zelt.AST
         public static ZInterface Comparable = new ZInterface("Comparable"); // <, >, <=, >=
         public static ZInterface Equatable = new ZInterface("Equatable"); // == and !=
         public static ZInterface Negatable = new ZInterface("Negatable"); // !
+        public static ZInterface Logical = new ZInterface("Logical"); // && and ||
 
         public static ZInterface Iterable = new ZInterface("Iterable");
         public static ZInterface Invocable = new ZInterface("Invocable");

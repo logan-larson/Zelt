@@ -13,11 +13,9 @@ statement
 	: declarationStatement
 	| assignmentStatement
 	| controlFlowStatement
-	//| functionCallStatement
 	| printStatement
-	| interfaceDeclaration
-	| structDeclaration
-	//| functionDeclaration
+	//| interfaceDeclaration
+	//| structDeclaration
 	| returnStatement
 	;
 
@@ -68,18 +66,6 @@ declaration
 	// x : Int; y, z : Float; a, b : Int, String;
 	: identifierList COLON typeList
 	; 
-
-function
-
-	// (x : Int, y : Int) => Int { return x + y; }
-	: LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
-
-	// Vector2 (v : Vector2) => Vector2 { return Vector2(caller.x + x, caller.y + y); }
-	| type LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
-
-	// (x : Int) => Int { return x * x; }
-	//| LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
-	;
 
 interfaceDeclaration
 	// interface Splittable { IType split() => IType, IType; }
@@ -141,17 +127,15 @@ simpleAssignment
 // ------------------------------------- Expressions -------------------------------------------
 // ---------------------------------------------------------------------------------------------
 
-functionCallStatement
-	: functionCall SEMICOLON
-	;
+function
 
-functionCall
-	// add(x, Vector2(), 6)
-	: functionIdentifier LEFT_PAREN expressionList? RIGHT_PAREN
-	// caller.add(Vector2(1, 2))
-	| CALLER PERIOD functionIdentifier LEFT_PAREN expressionList? RIGHT_PAREN
-	// myVector2.add(Vector2(1, 2))
-	| IDENTIFIER PERIOD functionIdentifier LEFT_PAREN expressionList? RIGHT_PAREN
+	// function no caller type
+	// (x : Int, y : Int) => Int { return x + y; }
+	: LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
+
+	// function with caller type
+	// Vector2 (v : Vector2) => Vector2 { return Vector2(caller.x + x, caller.y + y); }
+	| type LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
 	;
 
 expressionList
@@ -159,48 +143,62 @@ expressionList
 	;
 
 expression
+	: primaryExpression expressionTail*
+	| logicalExpression
+	;
 
-	// 5, 3.14, "Hello, World!", true, false, null
-	: literal									#literalExpression
+// x && y, x || y
+logicalExpression
+	: relationalExpression (boolOp relationalExpression)*
+	;
 
-	// [1, 2, 3, 4, 5], [1..10], [1..10, 2], [1, 2..10]
-	| list										#listExpression
+// x < y, x <= y, x > y, x >= y, x == y, x != y
+relationalExpression
+	: addExpression (relOp addExpression)*
+	;
 
-	// myVector2.x, _window.length, caller.y
-	| accessor									#accessorExpression
+// x + y, x - y
+addExpression
+	: multExpression (addOp multExpression)*
+	;
 
-	// caller
-	| CALLER									#callerExpression
+// x * y, x / y, x % y
+multExpression
+	: unaryExpression (multOp unaryExpression)*
+	;
 
-	// x, y, z, _a, _b, _c
-	| IDENTIFIER								#identifierExpression
+// ! x == y
+unaryExpression
+	: primaryExpression
+	| NOT expression
+	;
 
-	// (x : Int) => Int { return x * x; }, Int (y : Int) => Int { return caller + y; }
-	| function									#functionExpression
+primaryExpression
+	: literal								#literalExpression // 5, 3.14, "Hello, World!", true, false, null
+	| list									#listExpression // [1, 2, 3, 4, 5], [1..10], [1..10, 2], [1, 2..10]
+	| CALLER								#callerExpression // caller
+	| IDENTIFIER							#identifierExpression // x, y, z, _a, _b, _c
+	| function								#functionExpression // (x : Int) => Int { return x * x; }, Int (y : Int) => Int { return caller + y; }
+	| functionCallNoCaller					#functionCallNoCallerExpression // add(x, Vector2(), 6)n
+	| LEFT_PAREN expression RIGHT_PAREN		#parenExpression // ( x + ( y + z ) )
+	| UNDERSCORE							#underscoreExpression // _  -- underscore discards the value of the expression
+	;
 
-	// add(x, Vector2(), 6) -- Vector2() is a function call to the Vector2 'constructor'
-	| functionCall								#functionCallExpression
+// .add(x, Vector2(), 6); .caller; .x;
+expressionTail
+	: PERIOD functionIdentifier LEFT_PAREN expressionList? RIGHT_PAREN
+	| PERIOD CALLER
+	| PERIOD IDENTIFIER
+	;
 
-	// ( x + ( y + z ) )
-	| LEFT_PAREN expression RIGHT_PAREN			#parenExpression
+// add(x, Vector2(), 6)
+functionCallNoCaller
+	: functionIdentifier LEFT_PAREN expressionList? RIGHT_PAREN
+	;
 
-	// ! x == y
-	| NOT expression							#notExpression
 
-	// x * y, x / y, x % y
-	| expression multOp expression				#multExpression
-
-	// x + y, x - y
-	| expression addOp expression				#addExpression
-
-	// x < y, x <= y, x > y, x >= y, x == y, x != y
-	| expression relOp expression				#relationalExpression
-
-	// x && y, x || y
-	| expression boolOp expression				#logicalExpression
-
-	// _  -- underscore discards the value of the expression
-	| UNDERSCORE								#underscoreExpression
+functionCall
+	: expression								#callerFunctionCall 
 	;
 
 
@@ -317,13 +315,6 @@ structBlock
 // ---------------------------------------------------------------------------------------------
 // ------------------------------------- Operators ---------------------------------------------
 // ---------------------------------------------------------------------------------------------
-
-accessor
-	// boxDimensions.x -- used for accessing the properties of a variable that is a struct
-	: IDENTIFIER PERIOD IDENTIFIER
-	// caller.x -- used for accessing the caller's properties in a function
-	| CALLER PERIOD IDENTIFIER
-	;
 
 addOp
 	// +, -

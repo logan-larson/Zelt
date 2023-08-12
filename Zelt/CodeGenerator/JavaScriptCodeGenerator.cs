@@ -314,6 +314,9 @@ namespace Zelt.CodeGenerator
                 case ZCallerExpression callerExpression:
                     GenerateCodeForCallerExpression(callerExpression);
                     break;
+                case ZChainedExpression chainedExpression:
+                    GenerateCodeForChainedExpression(chainedExpression);
+                    break;
                 default:
                     throw new NotImplementedException();
             }
@@ -404,12 +407,37 @@ namespace Zelt.CodeGenerator
 
         public void GenerateCodeForBinaryExpression(ZBinaryExpression expression)
         {
+            if (expression.Operators.Count != expression.Expressions.Count - 1)
+                throw new Exception("Invalid number of operators in binary expression");
+
             Stream.Write("(");
-            GenerateCodeForExpression(expression.Left);
-            Stream.Write(BinaryOperators[expression.Operator.Operator]);
-            GenerateCodeForExpression(expression.Right);
+
+            GenerateCodeForExpression(expression.Expressions[0]);
+
+            for (int i = 0; i <expression.Operators.Count; i++)
+            {
+                Stream.Write(BinaryOperators[expression.Operators[i].Operator]);
+                GenerateCodeForExpression(expression.Expressions[i + 1]);
+            }
+
             Stream.Write(")");
         }
 
+        public void GenerateCodeForChainedExpression(ZChainedExpression expression)
+        {
+            if (expression.Expressions == null || expression.Expressions.Count == 0)
+                throw new Exception("Invalid chained expression");
+
+            // Visit the first expression
+            GenerateCodeForExpression(expression.Expressions[0]);
+
+            // Iterate through the rest of the expressions in the chain
+            for (int i = 1; i < expression.Expressions.Count; i++)
+            {
+                // Assuming you want to chain with a dot operator
+                Stream.Write(".");
+                GenerateCodeForExpression(expression.Expressions[i]);
+            }
+        }
     }
 }

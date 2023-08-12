@@ -106,6 +106,11 @@ namespace Zelt.AST
         }
     }
 
+    public class ZFunctionCallExpression : IZExpression
+    {
+        public ZType Type => throw new NotImplementedException();
+    }
+
 
     /*
     public class ZFunctionExpression : IZExpression
@@ -139,6 +144,35 @@ namespace Zelt.AST
     }
     */
 
+    public class ZChainedExpression : IZExpression
+    {
+        // The type is the type of the last expression in the chain
+        // Either a ZType.Return -- myVector.add(1).add(2) -> ZType.Return
+        // Or the type of the expression being accessed -- myVector.add(1).x -> ZType.Int
+        public ZType Type { get; }
+
+        public List<IZExpression> Expressions;
+
+        public ZChainedExpression(List<IZExpression> expressions, ZType type)
+        {
+            Expressions = expressions;
+            Type = type;
+        }
+    }
+
+    public class ZReturnExpression : IZExpression
+    {
+        public ZType Type { get; }
+
+        public List<ZType> ReturnTypes { get; }
+
+        public ZReturnExpression(List<ZType> returnTypes)
+        {
+            ReturnTypes = returnTypes;
+            Type = ZType.Return;
+        }
+    }
+
     public class ZListExpression : IZExpression
     {
         public ZType Type { get; }
@@ -157,13 +191,13 @@ namespace Zelt.AST
         public ZType Type { get; }
 
         public IZExpression Expression;
-        public ZUnaryOperator Operator;
+        public ZUnaryOperator? Operator;
 
-        public ZUnaryExpression(IZExpression expression, ZUnaryOperator @operator)
+        public ZUnaryExpression(IZExpression expression, ZUnaryOperator? @operator = null)
         {
             Expression = expression;
             Operator = @operator;
-            Type = Operator.ReturnType;
+            Type = Expression.Type;
         }
     }
 
@@ -171,16 +205,15 @@ namespace Zelt.AST
     {
         public ZType Type { get; }
 
-        public IZExpression Left;
-        public IZExpression Right;
-        public ZBinaryOperator Operator;
+        public List<IZExpression> Expressions;
 
-        public ZBinaryExpression(IZExpression left, IZExpression right, ZBinaryOperator @operator)
+        public List<ZBinaryOperator> Operators;
+
+        public ZBinaryExpression(List<IZExpression> expressions, List<ZBinaryOperator> operators)
         {
-            Left = left;
-            Right = right;
-            Operator = @operator;
-            Type = Operator.ReturnType;
+            Expressions = expressions;
+            Operators = operators;
+            Type = Operators[0].ReturnType;
         }
     }
 

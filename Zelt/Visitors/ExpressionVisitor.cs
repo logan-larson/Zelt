@@ -32,68 +32,85 @@ namespace Zelt.Visitors
 
         public override IZExpression VisitExpression([NotNull] ZeltParser.ExpressionContext context)
         {
-            if (context is ZeltParser.LiteralExpressionContext literalExpressionContext)
+            if (context.primaryExpression() is not null)
             {
-                return VisitLiteral(literalExpressionContext.literal());
-            }
-            else if (context is ZeltParser.ListExpressionContext listExpressionContext)
-            {
-                return VisitListExpression(listExpressionContext);
-            }
-            else if (context is ZeltParser.AccessorExpressionContext accessorExpressionContext)
-            {
-                //return new AccessorVisitor(Types, Variables).VisitAccessor(accessorExpressionContext.accessor());
-                throw new NotImplementedException();
-            }
-            else if (context is ZeltParser.IdentifierExpressionContext identifierExpressionContext)
-            {
-                return VisitIdentifierExpression(identifierExpressionContext);
-            }
-            else if (context is ZeltParser.FunctionExpressionContext functionExpressionContext)
-            {
-                return VisitFunctionExpression(functionExpressionContext);
-            }
-            else if (context is ZeltParser.FunctionCallExpressionContext functionCallExpressionContext)
-            {
-                return VisitFunctionCallExpression(functionCallExpressionContext);
-            }
-            else if (context is ZeltParser.ParenExpressionContext parenExpressionContext)
-            {
-                return VisitExpression(parenExpressionContext.expression());
-            }
-            else if (context is ZeltParser.NotExpressionContext notExpressionContext)
-            {
-                return VisitNotExpression(notExpressionContext);
-            }
-            else if (context is ZeltParser.MultExpressionContext multExpressionContext)
-            {
-                return VisitMultExpression(multExpressionContext);
-            }
-            else if (context is ZeltParser.AddExpressionContext addExpressionContext)
-            {
-                return VisitAddExpression(addExpressionContext);
-            }
-            else if (context is ZeltParser.RelationalExpressionContext relationalExpressionContext)
-            {
-                return VisitRelationalExpression(relationalExpressionContext);
-            }
-            else if (context is ZeltParser.LogicalExpressionContext logicalExpressionContext)
-            {
-                return VisitLogicalExpression(logicalExpressionContext);
-            }
-            else if (context is ZeltParser.CallerExpressionContext callerExpressionContext)
-            {
-                if (CallerType == null)
-                    ErrorHandler.ThrowError("Cannot use caller expression outside of a function", callerExpressionContext.Start.Line, callerExpressionContext.Start.Column, SourceCodeLines);
+                List<IZExpression> expressions = new List<IZExpression>
+                {
+                    // Add the primary expression to the list of expressions
+                    VisitPrimaryExpression(context.primaryExpression())
+                };
 
-                return new ZCallerExpression(CallerType ?? ZType.Null);
+                // For each expression in the expressionTail, add it to the list of expressions
+                for (int i = 0; i < context.expressionTail().Length; i++)
+                {
+                    expressions.Add(VisitExpressionTail(context.expressionTail()[i]));
+                }
+
+                // Return new chained expression
+                return new ZChainedExpression(expressions, expressions.Last().Type);
             }
-            else if (context is ZeltParser.UnderscoreExpressionContext underscoreExpressionContext)
+            else if (context.logicalExpression() is not null)
             {
-                throw new NotImplementedException();
+                return VisitLogicalExpression(context.logicalExpression());
             }
 
             throw new NotImplementedException();
+        }
+
+        public override IZExpression VisitPrimaryExpression([NotNull] ZeltParser.PrimaryExpressionContext context)
+        {
+            
+            // These are the primary expressions that have lexer tokens in them so they need to be handled separately
+            if (context is ZeltParser.IdentifierExpressionContext idExprContext)
+            {
+                return VisitIdentifierExpression(idExprContext);
+            }
+
+            if (context is ZeltParser.CallerExpressionContext callerExprContext)
+            {
+                return VisitCallerExpression(callerExprContext);
+            }
+
+            if (context is ZeltParser.ParenExpressionContext parenExprContext)
+            {
+                return VisitParenExpression(parenExprContext);
+            }
+
+            if (context is ZeltParser.UnderscoreExpressionContext underscoreExprContext)
+            {
+                return VisitUnderscoreExpression(underscoreExprContext);
+            }
+
+            // Otherwise just visit the expression
+            return base.VisitPrimaryExpression(context);
+        }
+
+        public override IZExpression VisitExpressionTail([NotNull] ZeltParser.ExpressionTailContext context)
+        {
+            if (context.functionIdentifier() is not null)
+            {
+                return VisitFunctionIdentifier(context.functionIdentifier());
+            }
+
+            if (context.CALLER() is not null)
+            {
+                if (CallerType is null)
+                    ErrorHandler.ThrowError("Cannot use caller expression outside of a caller function", context.Start.Line, context.Start.Column, SourceCodeLines);
+
+                return new ZCallerExpression(CallerType ?? ZType.Null);
+            }
+
+            if (context.IDENTIFIER() is not null)
+            {
+                // Find the variable
+                if (!Variables.ContainsKey(context.IDENTIFIER().GetText()))
+                    ErrorHandler.ThrowError($"Variable {context.IDENTIFIER().GetText()} does not exist", context.Start.Line, context.Start.Column, SourceCodeLines);
+
+                // Return the variable
+                return new ZIdentifierExpression(context.IDENTIFIER().GetText(), Variables[context.IDENTIFIER().GetText()].Type);
+            }
+
+            return base.VisitExpressionTail(context);
         }
 
         public override IZExpression VisitLiteral([NotNull] ZeltParser.LiteralContext context)
@@ -120,6 +137,72 @@ namespace Zelt.Visitors
             }
 
             throw new NotImplementedException();
+        }
+
+        public override IZExpression VisitList([NotNull] ZeltParser.ListContext context)
+        {
+            List<IZExpression> listElements = new List<IZExpression>();
+            ZType? elementType = null;
+
+            foreach (var elementContext in context.listElement())
+            {
+                if (elementContext.DOUBLE_PERIOD() != null)
+                {
+                    var startExpr = Visit(elementContext.expression(0));
+                    var endExpr = Visit(elementContext.expression(1));
+
+                    if (startExpr.Type.CompareTo(ZType.Int) != 0 || endExpr.Type.CompareTo(ZType.Int) != 0)
+                    {
+                        ErrorHandler.ThrowError("Range expressions must be integers", context.Start.Line, context.Start.Column, SourceCodeLines);
+                    }
+
+                    var start = (ZIntegerExpression)startExpr;
+                    var end = (ZIntegerExpression)endExpr;
+
+                    if (elementType == null)
+                    {
+                        elementType = startExpr.Type;
+                    }
+
+                    if (startExpr.Type.CompareTo(elementType) != 0 || endExpr.Type.CompareTo(elementType) != 0)
+                    {
+                        ErrorHandler.ThrowError("All elements in a list must be of the same type", context.Start.Line, context.Start.Column, SourceCodeLines);
+                    }
+
+                    if (start.Value < end.Value)
+                    {
+                        for (var i = start.Value; i <= end.Value; i++)
+                        {
+                            listElements.Add(new ZIntegerExpression(i));
+                        }
+                    }
+                    else
+                    {
+                        for (var i = start.Value; i >= end.Value; i--)
+                        {
+                            listElements.Add(new ZIntegerExpression(i));
+                        }
+                    }
+                }
+                else
+                {
+                    var expr = Visit(elementContext.expression(0));
+
+                    if (elementType == null)
+                    {
+                        elementType = expr.Type;
+                    }
+
+                    if (expr.Type.CompareTo(elementType) != 0)
+                    {
+                        ErrorHandler.ThrowError("All elements in a list must be of the same type", context.Start.Line, context.Start.Column, SourceCodeLines);
+                    }
+
+                    listElements.Add(expr);
+                }
+            }
+
+            return new ZListExpression(listElements, elementType ?? ZType.Null);
         }
 
         public override IZExpression VisitListExpression([NotNull] ZeltParser.ListExpressionContext context)
@@ -187,6 +270,15 @@ namespace Zelt.Visitors
 
             return new ZListExpression(listElements, elementType ?? ZType.Null);
         }
+
+        public override IZExpression VisitCallerExpression([NotNull] ZeltParser.CallerExpressionContext context)
+        {
+                if (CallerType is null)
+                    ErrorHandler.ThrowError("Cannot use caller expression outside of a caller function", context.Start.Line, context.Start.Column, SourceCodeLines);
+
+                return new ZCallerExpression(CallerType ?? ZType.Null);
+        }
+
 
         public override IZExpression VisitFunctionExpression([NotNull] ZeltParser.FunctionExpressionContext context)
         {
@@ -295,6 +387,90 @@ namespace Zelt.Visitors
             return new ZFunctionExpression(parameterValues, returnTypes, body, caller, functionType);
         }
 
+        // TODO: Implement
+        public override IZExpression VisitFunctionCallNoCallerExpression([NotNull] ZeltParser.FunctionCallNoCallerExpressionContext context)
+        {
+            /*
+                ZReturnExpression returnExpression = new ZReturnExpression(new List<ZType>());
+
+                if (context.functionCall().expression() is not null)
+                {
+                    // Example: foo.bar(1, "hello", 3.14)
+
+                    // Visit the caller expression
+                    IZExpression callerExpression = Visit(context.functionCall().expression());
+
+                    // If the variable exists use it
+                    string identifier = context.functionCall().functionIdentifier().IDENTIFIER().GetText();
+                    ZVariable functionVariable = Variables[identifier];
+
+
+                    // If the caller exists, use it
+                    string caller = context.functionCall().functionIdentifier().IDENTIFIER().GetText();
+                    ZVariable functionVariable = Variables[identifier];
+
+
+
+                }
+                else if (context.functionCall().functionIdentifier() is not null)
+                {
+                    // Example: foo(1, "hello", 3.14)
+
+                    // If the function variable exists in the current scope, use it
+                    string identifier = context.functionCall().functionIdentifier().IDENTIFIER().GetText();
+                    ZVariable functionVariable = Variables[identifier];
+
+                    if (functionVariable == null)
+                    {
+                        ErrorHandler.ThrowError("Function does not exist in scope.", context.Start.Line, context.Start.Column, SourceCodeLines);
+                        // This will never be reached, but the compiler doesn't know that
+                        return new ZReturnExpression(new List<ZType>());
+                    }
+
+                    // Check if the function variable is a function
+                    if (functionVariable.Type is not ZFunctionType)
+                    {
+                        ErrorHandler.ThrowError($"Variable '{functionVariable.Name}' is not a function", context.Start.Line, context.Start.Column, SourceCodeLines);
+                    }
+
+                    // Get the function type
+                    ZFunctionType functionType = (ZFunctionType)functionVariable.Type;
+
+                    // Check if the number of arguments matches the number of parameters
+                    if (functionType.ParameterTypes.Count != context.functionCall().expressionList().expression().Length)
+                    {
+                        ErrorHandler.ThrowError($"Function '{functionVariable.Name}' expects {functionType.ParameterTypes.Count} arguments but {context.functionCall().expressionList().expression().Length} were given", context.Start.Line, context.Start.Column, SourceCodeLines);
+                    }
+
+                    // Get the arguments
+                    List<IZExpression> arguments = new List<IZExpression>();
+                    foreach (var expression in context.functionCall().expressionList().expression())
+                    {
+                        arguments.Add(Visit(expression));
+                    }
+
+                    // Check if the types of the arguments match the types of the parameters
+                    foreach (var (argument, parameter) in arguments.Zip(functionType.ParameterTypes))
+                    {
+                        if (argument.Type.CompareTo(parameter) != 0)
+                        {
+                            ErrorHandler.ThrowError($"Argument type '{argument.Type}' does not match parameter type '{parameter}'", context.Start.Line, context.Start.Column, SourceCodeLines);
+                        }
+                    }
+
+                    // Return the return types of the function
+                    returnExpression = new ZReturnExpression(functionType.ReturnTypes);
+                }
+                else 
+                {
+                    throw new NotImplementedException();
+                }
+
+                return returnExpression;
+            */
+            throw new NotImplementedException();
+        }
+
         public override IZExpression VisitIdentifierExpression([NotNull] ZeltParser.IdentifierExpressionContext context)
         {
             string identifier = context.IDENTIFIER().GetText();
@@ -314,167 +490,285 @@ namespace Zelt.Visitors
             return new ZIdentifierExpression(identifier, Variables[identifier].Type);
         }
 
-        public override IZExpression VisitNotExpression([NotNull] ZeltParser.NotExpressionContext context)
+        public override IZExpression VisitUnaryExpression([NotNull] ZeltParser.UnaryExpressionContext context)
         {
-            // Return the negation of the expression
+            // If the expression is the primary expression, return it
+            if (context.primaryExpression() is not null)
+            {
+                return VisitPrimaryExpression(context.primaryExpression());
+            }
+
+            // Otherwise get the expression and operator and return the unary expression
+
+            // Get the expression
             IZExpression expression = VisitExpression(context.expression());
+
+            // Get the operator
+            string op = context.NOT().GetText();
+
+            if (op is null)
+            {
+                ErrorHandler.ThrowError("Unary operator is null, I don't know how you achieved this.", context.Start.Line, context.Start.Column, SourceCodeLines);
+            }
 
             // Check if the type implements the Not interface
             TypeChecker.TypeImplements(expression.Type, ZInterface.Negatable, context.Start.Line, context.Start.Column, SourceCodeLines);
+
+            // Check if the type implements the Negatable interface
+            //if (!expression.Type.Implements(ZInterface.Negatable))
+            //{
+                //ErrorHandler.ThrowError($"Type '{expression.Type}' does not implement the Negatable interface", context.Start.Line, context.Start.Column, SourceCodeLines);
+            //}
 
             return new ZUnaryExpression(expression, new ZUnaryOperator(EZUnaryOperator.Negate, expression.Type));
         }
 
         public override IZExpression VisitMultExpression([NotNull] ZeltParser.MultExpressionContext context)
         {
-            IZExpression left = VisitExpression(context.expression(0));
-            IZExpression right = VisitExpression(context.expression(1));
+            List<IZExpression> expressions = new List<IZExpression>();
+            List<ZBinaryOperator> ops = new List<ZBinaryOperator>();
 
-            // Check if the types are equal
-            if (left.Type.CompareTo(right.Type) != 0)
+            IZExpression current = VisitUnaryExpression(context.unaryExpression(0));
+
+            expressions.Add(current);
+
+            for (int i = 0; i < context.multOp().Length; i++)
             {
-                ErrorHandler.ThrowError($"Cannot multiply types {left.Type.Name} and {right.Type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
+                IZExpression next = VisitUnaryExpression(context.unaryExpression(i + 1));
+
+                // Get the corresponding multiplicative operator
+                string op = context.multOp(i).GetText();
+
+                // TODO: Set this up so that I don't have to do these long switch statement checks
+                //List<ZInterface> interfaces = new List<ZInterface>() { ZInterface.Multiplicative, ZInterface.Divisive, ZInterface.Modulable };
+                //TypeChecker.TypeImplementsAny(current.Type, interfaces, context.Start.Line, context.Start.Column, SourceCodeLines);
+                //TypeChecker.TypeImplementsAny(next.Type, interfaces, context.Start.Line, context.Start.Column, SourceCodeLines);
+
+                // Check if the types can perform multiplication operations
+                if (!current.Type.Implements(ZInterface.Multiplicative) && !current.Type.Implements(ZInterface.Divisive) && !current.Type.Implements(ZInterface.Modulable))
+                {
+                    switch (op)
+                    {
+                        case "*":
+                            ErrorHandler.ThrowError($"Cannot perform multiplication operation on type {current.Type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
+                            break;
+                        case "/":
+                            ErrorHandler.ThrowError($"Cannot perform division operation on type {current.Type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
+                            break;
+                        case "%":
+                            ErrorHandler.ThrowError($"Cannot perform modulation operation on type {current.Type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
+                            break;
+
+                    }
+                }
+
+                if (!next.Type.Implements(ZInterface.Multiplicative) && !next.Type.Implements(ZInterface.Divisive) && !next.Type.Implements(ZInterface.Modulable))
+                {
+                    switch (op)
+                    {
+                        case "*":
+                            ErrorHandler.ThrowError($"Cannot perform multiplication operation on type {next.Type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
+                            break;
+                        case "/":
+                            ErrorHandler.ThrowError($"Cannot perform division operation on type {next.Type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
+                            break;
+                        case "%":
+                            ErrorHandler.ThrowError($"Cannot perform modulation operation on type {next.Type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
+                            break;
+
+                    }
+                }
+
+                expressions.Add(next);
+
+                // Combine the results based on the operator
+                switch (op) {
+                    case "*":
+                        ops.Add(new ZBinaryOperator(EZBinaryOperator.Multiply, expressions[0].Type));
+                        break;
+                    case "/":
+                        ops.Add(new ZBinaryOperator(EZBinaryOperator.Divide, expressions[0].Type));
+                        break;
+                    case "%":
+                        ops.Add(new ZBinaryOperator(EZBinaryOperator.Modulo, expressions[0].Type));
+                        break;
+                    default:
+                        ErrorHandler.ThrowError($"'{op}' is not a valid multiplication, division, or modulation operator", context.Start.Line, context.Start.Column, SourceCodeLines);
+                        break;
+                }
             }
 
-            if (context.multOp().MULTIPLY() != null)
+            if (expressions.Count == 1 && ops.Count == 0)
             {
-                TypeChecker.TypeImplements(left.Type, ZInterface.Multiplicative, context.Start.Line, context.Start.Column, SourceCodeLines);
-                TypeChecker.TypeImplements(right.Type, ZInterface.Multiplicative, context.Start.Line, context.Start.Column, SourceCodeLines);
+                return current;
+            }
 
-                return new ZBinaryExpression(left, right,
-                    new ZBinaryOperator(EZBinaryOperator.Multiply, left.Type));
-            }
-            else if (context.multOp().DIVIDE() != null)
-            {
-                TypeChecker.TypeImplements(left.Type, ZInterface.Divisive, context.Start.Line, context.Start.Column, SourceCodeLines);
-                TypeChecker.TypeImplements(right.Type, ZInterface.Divisive, context.Start.Line, context.Start.Column, SourceCodeLines);
-
-                return new ZBinaryExpression(left, right,
-                    new ZBinaryOperator(EZBinaryOperator.Divide, left.Type));
-            }
-            else if (context.multOp().MODULO() != null)
-            {
-                TypeChecker.TypeImplements(left.Type, ZInterface.Modulable, context.Start.Line, context.Start.Column, SourceCodeLines);
-                TypeChecker.TypeImplements(right.Type, ZInterface.Modulable, context.Start.Line, context.Start.Column, SourceCodeLines);
-
-                return new ZBinaryExpression(left, right,
-                    new ZBinaryOperator(EZBinaryOperator.Modulo, left.Type));
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
+            return new ZBinaryExpression(expressions, ops);
         }
 
         public override IZExpression VisitAddExpression([NotNull] ZeltParser.AddExpressionContext context)
         {
-            IZExpression left = VisitExpression(context.expression(0));
-            IZExpression right = VisitExpression(context.expression(1));
+            List<IZExpression> expressions = new List<IZExpression>();
+            List<ZBinaryOperator> ops = new List<ZBinaryOperator>();
 
-            // Check if the types are equal
-            if (left.Type.CompareTo(right.Type) != 0)
+            IZExpression current = VisitMultExpression(context.multExpression(0));
+
+            expressions.Add(current);
+
+            for (int i = 0; i < context.addOp().Length; i++)
             {
-                ErrorHandler.ThrowError($"Cannot add types {left.Type.Name} and {right.Type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
+                IZExpression next = VisitMultExpression(context.multExpression(i + 1));
+
+                // Get the corresponding additive operator
+                string op = context.addOp(i).GetText();
+
+                // Check if the types can perform add operations
+                if (!current.Type.Implements(ZInterface.Additive) && !current.Type.Implements(ZInterface.Subtractive))
+                {
+                    ErrorHandler.ThrowError($"Cannot perform {(op == "+" ? "addition ": "subraction")} operation on type {current.Type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
+                }
+
+                if (!next.Type.Implements(ZInterface.Additive) && !next.Type.Implements(ZInterface.Subtractive))
+                {
+                    ErrorHandler.ThrowError($"Cannot perform {(op == "+" ? "addition ": "subraction")} operation on type {next.Type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
+                }
+
+                expressions.Add(next);
+
+                // Combine the results based on the operator
+                switch (op) {
+                    case "+":
+                        ops.Add(new ZBinaryOperator(EZBinaryOperator.Add, expressions[0].Type));
+                        break;
+                    case "-":
+                        ops.Add(new ZBinaryOperator(EZBinaryOperator.Subtract, expressions[0].Type));
+                        break;
+                    default:
+                        ErrorHandler.ThrowError($"'{op}' is not a valid addition or subtraction operator", context.Start.Line, context.Start.Column, SourceCodeLines);
+                        break;
+                }
             }
 
-            if (context.addOp().PLUS() != null)
+            if (expressions.Count == 1 && ops.Count == 0)
             {
-                TypeChecker.TypeImplements(left.Type, ZInterface.Additive, context.Start.Line, context.Start.Column, SourceCodeLines);
-                TypeChecker.TypeImplements(right.Type, ZInterface.Additive, context.Start.Line, context.Start.Column, SourceCodeLines);
+                return current;
+            }
 
-                return new ZBinaryExpression(left, right,
-                    new ZBinaryOperator(EZBinaryOperator.Add, left.Type));
-            }
-            else if (context.addOp().MINUS() != null)
-            {
-                TypeChecker.TypeImplements(left.Type, ZInterface.Subtractive, context.Start.Line, context.Start.Column, SourceCodeLines);
-                TypeChecker.TypeImplements(right.Type, ZInterface.Subtractive, context.Start.Line, context.Start.Column, SourceCodeLines);
-
-                return new ZBinaryExpression(left, right,
-                    new ZBinaryOperator(EZBinaryOperator.Subtract, left.Type));
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
+            return new ZBinaryExpression(expressions, ops);
         }
 
         public override IZExpression VisitRelationalExpression([NotNull] ZeltParser.RelationalExpressionContext context)
         {
-            IZExpression left = VisitExpression(context.expression(0));
-            IZExpression right = VisitExpression(context.expression(1));
+            List<IZExpression> expressions = new List<IZExpression>();
+            List<ZBinaryOperator> ops = new List<ZBinaryOperator>();
 
-            // Check if the types are equal
-            if (left.Type.CompareTo(right.Type) != 0)
-            {
-                ErrorHandler.ThrowError($"Cannot compare types {left.Type.Name} and {right.Type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
-            }
-            
-            // Check if the type implements the Comparable interface
-            TypeChecker.TypeImplements(left.Type, ZInterface.Comparable, context.Start.Line, context.Start.Column, SourceCodeLines);
-            TypeChecker.TypeImplements(right.Type, ZInterface.Comparable, context.Start.Line, context.Start.Column, SourceCodeLines);
+            IZExpression current = VisitAddExpression(context.addExpression(0));
 
-            if (context.relOp().LESS_THAN() != null)
+            expressions.Add(current);
+
+            for (int i = 0; i < context.relOp().Length; i++)
             {
-                return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.LessThan, ZType.Bool));
+                IZExpression next = VisitAddExpression(context.addExpression(i + 1));
+
+                // Check if the types can perform relational operations
+                if (!current.Type.Implements(ZInterface.Comparable) && !current.Type.Implements(ZInterface.Equatable))
+                {
+                    ErrorHandler.ThrowError($"Cannot perform relational operation on type {current.Type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
+                }
+
+                if (!next.Type.Implements(ZInterface.Comparable) && !next.Type.Implements(ZInterface.Equatable))
+                {
+                    ErrorHandler.ThrowError($"Cannot perform relational operation on type {next.Type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
+                }
+
+                expressions.Add(next);
+
+                // Get the corresponding relational operator
+                string op = context.relOp(i).GetText();
+
+                // Combine the results based on the operator
+                switch (op) {
+                    case "<":
+                        ops.Add(new ZBinaryOperator(EZBinaryOperator.LessThan, ZType.Bool));
+                        break;
+                    case "<=":
+                        ops.Add(new ZBinaryOperator(EZBinaryOperator.LessThanOrEqual, ZType.Bool));
+                        break;
+                    case ">":
+                        ops.Add(new ZBinaryOperator(EZBinaryOperator.GreaterThan, ZType.Bool));
+                        break;
+                    case ">=":
+                        ops.Add(new ZBinaryOperator(EZBinaryOperator.GreaterThanOrEqual, ZType.Bool));
+                        break;
+                    case "==":
+                        ops.Add(new ZBinaryOperator(EZBinaryOperator.Equal, ZType.Bool));
+                        break;
+                    case "!=":
+                        ops.Add(new ZBinaryOperator(EZBinaryOperator.NotEqual, ZType.Bool));
+                        break;
+                    default:
+                        ErrorHandler.ThrowError($"'{op}' is not a valid relational operator", context.Start.Line, context.Start.Column, SourceCodeLines);
+                        break;
+                }
             }
-            else if (context.relOp().LESS_THAN_OR_EQUAL() != null)
+
+            if (expressions.Count == 1 && ops.Count == 0)
             {
-                return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.LessThanOrEqual, ZType.Bool));
+                return current;
             }
-            else if (context.relOp().GREATER_THAN() != null)
-            {
-                return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.GreaterThan, ZType.Bool));
-            }
-            else if (context.relOp().GREATER_THAN_OR_EQUAL() != null)
-            {
-                return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.GreaterThanOrEqual, ZType.Bool));
-            }
-            else if (context.relOp().EQUALS() != null)
-            {
-                return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.Equal, ZType.Bool));
-            }
-            else if (context.relOp().NOT_EQUALS() != null)
-            {
-                return new ZBinaryExpression(left, right, new ZBinaryOperator(EZBinaryOperator.NotEqual, ZType.Bool));
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
+
+            return new ZBinaryExpression(expressions, ops);
         }
 
         public override IZExpression VisitLogicalExpression([NotNull] ZeltParser.LogicalExpressionContext context)
         {
-            IZExpression left = VisitExpression(context.expression(0));
-            IZExpression right = VisitExpression(context.expression(1));
+            List<IZExpression> expressions = new List<IZExpression>();
+            List<ZBinaryOperator> ops = new List<ZBinaryOperator>();
 
-            // Check if the types can perform boolean operations
-            if (left.Type.CompareTo(ZType.Bool) != 0)
+            IZExpression current = VisitRelationalExpression(context.relationalExpression(0));
+
+            expressions.Add(current);
+
+            for (int i = 0; i < context.boolOp().Length; i++)
             {
-                ErrorHandler.ThrowError($"Cannot perform boolean operation on type {left.Type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
-            }
-            if (right.Type.CompareTo(ZType.Bool) != 0)
-            {
-                ErrorHandler.ThrowError($"Cannot perform boolean operation on type {right.Type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
+                IZExpression next = VisitRelationalExpression(context.relationalExpression(i + 1));
+
+                // Check if the types can perform boolean operations
+                if (!current.Type.Implements(ZInterface.Logical))
+                {
+                    ErrorHandler.ThrowError($"Cannot perform boolean operation on type {current.Type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
+                }
+
+                if (!next.Type.Implements(ZInterface.Logical))
+                {
+                    ErrorHandler.ThrowError($"Cannot perform boolean operation on type {next.Type.Name}", context.Start.Line, context.Start.Column, SourceCodeLines);
+                }
+
+                expressions.Add(next);
+
+                // Get the corresponding boolean operator
+                string op = context.boolOp(i).GetText();
+
+                // Combine the results based on the operator
+                switch (op) {
+                    case "&&":
+                        ops.Add(new ZBinaryOperator(EZBinaryOperator.And, ZType.Bool));
+                        break;
+                    case "||":
+                        ops.Add(new ZBinaryOperator(EZBinaryOperator.Or, ZType.Bool));
+                        break;
+                    default:
+                        ErrorHandler.ThrowError($"'{op}' is not a valid boolean operator", context.Start.Line, context.Start.Column, SourceCodeLines);
+                        break;
+                }
             }
 
-            if (context.boolOp().AND() != null)
+            if (expressions.Count == 1 && ops.Count == 0)
             {
-                return new ZBinaryExpression(left, right,
-                    new ZBinaryOperator(EZBinaryOperator.And, ZType.Bool));
+                return current;
             }
-            else if (context.boolOp().OR() != null)
-            {
-                return new ZBinaryExpression(left, right,
-                    new ZBinaryOperator(EZBinaryOperator.Or, ZType.Bool));
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
+
+            return new ZBinaryExpression(expressions, ops);
         }
-
-
     }
 }

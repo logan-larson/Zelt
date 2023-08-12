@@ -279,13 +279,12 @@ namespace Zelt.Visitors
                 return new ZCallerExpression(CallerType ?? ZType.Null);
         }
 
-
-        public override IZExpression VisitFunctionExpression([NotNull] ZeltParser.FunctionExpressionContext context)
+        public override IZExpression VisitFunction([NotNull] ZeltParser.FunctionContext context)
         {
             Dictionary<string, ZVariable> variables = new Dictionary<string, ZVariable>(Variables);
             // Get parameter values
             List<ZParameterValue> parameterValues = new List<ZParameterValue>();
-            foreach (var parameter in context.function().parameterDeclarationList().parameterDeclaration())
+            foreach (var parameter in context.parameterDeclarationList().parameterDeclaration())
             {
                 if (parameter.declaration() is not null)
                 {
@@ -319,23 +318,23 @@ namespace Zelt.Visitors
 
             // Get return types
             List<ZType> returnTypes = new List<ZType>();
-            foreach (var returnType in context.function().typeList().type())
+            foreach (var returnType in context.typeList().type())
             {
                 returnTypes.Add(new TypeVisitor(Types, SourceCodeLines).Visit(returnType));
             }
 
             // If caller exists, add it to the function
             ZType? caller = null;
-            if (context.function().type() != null)
+            if (context.type() != null)
             {
-                caller = new TypeVisitor(Types, SourceCodeLines).Visit(context.function().type());
+                caller = new TypeVisitor(Types, SourceCodeLines).Visit(context.type());
             }
 
             // Get the function body
             List<IZStatement> body = new List<IZStatement>();
 
             // If there is a body, visit it
-            if (context.function().block() != null)
+            if (context.block() != null)
             {
                 // Setup the scope for the body
                 Dictionary<string, ZVariable> bodyVariables = new Dictionary<string, ZVariable>(Variables);
@@ -351,7 +350,7 @@ namespace Zelt.Visitors
 
                 StatementVisitor visitor = new StatementVisitor(Types, bodyVariables, SourceCodeLines, caller);
 
-                foreach (var statement in context.function().block().statement())
+                foreach (var statement in context.block().statement())
                 {
                     // If the statement is a return statement, check if it is valid
                      IZStatement zStatement = visitor.Visit(statement);

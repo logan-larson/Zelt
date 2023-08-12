@@ -1,11 +1,6 @@
 
 
-a : Int = 5;
 
-b : Int = 6;
-
-c := a + b;
-
-d := a * b;
-
-e := a + b - c;
+f := (x : Int) => Int {
+	return x + 1;
+};

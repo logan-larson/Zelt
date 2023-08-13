@@ -316,6 +316,9 @@ namespace Zelt.Visitors
         {
             // Simple assignment syntax: identifierList '=' expressionList
 
+            // The identifiers list can now contain chained identifiers, representing accessing a field of a struct
+
+
             // Get the identifiers
             List<string> identifiers = new List<string>();
             foreach (var identifier in context.identifierList().IDENTIFIER())

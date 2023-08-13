@@ -15,8 +15,9 @@ Vector2 := struct {
 };
 
 
-myVector : Vector2;
+myVector : Vector2 = Vector2(1.0, 2.0);
 
-//myVector : Vector2 = Vector2(1.0, 2.0);
+
+myVector.x = 3.0;
 
 

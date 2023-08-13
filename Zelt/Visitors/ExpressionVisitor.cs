@@ -90,6 +90,8 @@ namespace Zelt.Visitors
             if (context.IDENTIFIER() is not null)
             {
                 // Find the variable
+                // The problem with this is the variable could be in a different scope so we need to find the scope
+                // TODO: Find the scope
                 if (!Variables.ContainsKey(context.IDENTIFIER().GetText()))
                     ErrorHandler.ThrowError($"Variable {context.IDENTIFIER().GetText()} does not exist", context.Start.Line, context.Start.Column, SourceCodeLines);
 

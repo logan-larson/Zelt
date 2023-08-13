@@ -277,6 +277,8 @@ listType
 identifierList
 	// x, _y, z123, R2D2
 	: IDENTIFIER (COMMA IDENTIFIER)*
+	// myVector.x, myPlayer.myVector.y
+	| IDENTIFIER PERIOD IDENTIFIER (COMMA IDENTIFIER PERIOD IDENTIFIER)*
 	;
 
 literal

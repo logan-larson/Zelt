@@ -26,7 +26,7 @@ namespace Zelt.CodeGenerator
             throw new NotImplementedException();
         }
 
-        public void GenerateCodeForDeclarationStatement(ZDeclarationStatement statement)
+        public void GenerateCodeForDeclarationStatement(ZDeclarationStatement statement, bool hasAssignment)
         {
             throw new NotImplementedException();
         }
@@ -36,7 +36,7 @@ namespace Zelt.CodeGenerator
             throw new NotImplementedException();
         }
 
-        public void GenerateCodeForDeclaration(List<ZDeclaration> declarations)
+        public void GenerateCodeForDeclaration(List<ZDeclaration> declarations, bool hasAssignment)
         {
             throw new NotImplementedException();
         }

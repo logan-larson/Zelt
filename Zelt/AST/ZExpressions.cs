@@ -65,7 +65,6 @@ namespace Zelt.AST
         }
     }
 
-
     public class ZFunctionExpression : IZExpression
     {
         public ZType Type { get; }
@@ -74,17 +73,6 @@ namespace Zelt.AST
         public List<ZParameterValue> ParameterValues;
         public List<ZType> ReturnTypes;
         public List<IZStatement> Body;
-
-        /*
-        public ZFunctionExpression(List<ZParameterValue> parameterValues, List<ZType> returnTypes, List<IZStatement> body, ZType type)
-        {
-            ParameterValues = parameterValues;
-            ReturnTypes = returnTypes;
-            Body = body;
-            Caller = null;
-            Type = type;
-        }
-        */
 
         public ZFunctionExpression(List<ZParameterValue> parameterValues, List<ZType> returnTypes, List<IZStatement> body, ZType? caller, ZType type)
         {
@@ -122,39 +110,6 @@ namespace Zelt.AST
         }
     }
 
-
-    /*
-    public class ZFunctionExpression : IZExpression
-    {
-        // Type
-        public ZType Type { get; }
-
-        // Parameters -- Are these assignments or declarations?
-        // (x : Int, y : Int) => { x + y }      --- parameters as declarations
-        // (x := 1, y := 2) => Int { x + y }    --- parameters as assignments, when you allow default values
-        public List<ZDeclaration> Parameters;
-
-        // Return types
-        public List<ZType> ReturnTypes;
-
-        // Body
-        public List<IZStatement> Body;
-
-        // Caller type -- null if no caller type is specified
-        public ZType? CallerType;
-
-        public ZFunctionExpression(ZType type, List<ZDeclaration> parameters, List<ZType> returnTypes, List<IZStatement> body, ZType? callerType)
-        {
-            Type = type;
-            Parameters = parameters;
-            ReturnTypes = returnTypes;
-            Body = body;
-            CallerType = callerType;
-        }
-
-    }
-    */
-
     public class ZChainedExpression : IZExpression
     {
         // The type is the type of the last expression in the chain
@@ -168,19 +123,6 @@ namespace Zelt.AST
         {
             Expressions = expressions;
             Type = type;
-        }
-    }
-
-    public class ZReturnExpression : IZExpression
-    {
-        public ZType Type { get; }
-
-        public List<ZType> ReturnTypes { get; }
-
-        public ZReturnExpression(List<ZType> returnTypes)
-        {
-            ReturnTypes = returnTypes;
-            Type = ZType.Return;
         }
     }
 

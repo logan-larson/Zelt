@@ -38,6 +38,11 @@ namespace Zelt.Visitors
                 return VisitFunctionCallerType(context.functionCallerType());
             }
 
+            if (context.structType() is not null)
+            {
+                return VisitStructType(context.structType());
+            }
+
             if (context.listType() is not null)
             {
                 return VisitListType(context.listType());
@@ -114,6 +119,18 @@ namespace Zelt.Visitors
             }
 
             return new ZFunctionType(parameterTypes, returnTypes, callerType);
+        }
+
+        public override ZType VisitStructType([NotNull] ZeltParser.StructTypeContext context)
+        {
+            List<ZType> memberTypes = new List<ZType>();
+
+            foreach (var type in context.parameterTypeList().type())
+            {
+                memberTypes.Add(VisitType(type));
+            }
+
+            return new ZStructType(memberTypes);
         }
     }
 }

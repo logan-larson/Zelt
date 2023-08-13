@@ -14,8 +14,6 @@ statement
 	| assignmentStatement
 	| controlFlowStatement
 	| printStatement
-	//| interfaceDeclaration
-	//| structDeclaration
 	| returnStatement
 	;
 
@@ -63,7 +61,7 @@ declarationList
 	;
 
 declaration
-	// x : Int; y, z : Float; a, b : Int, String;
+	// x : Int; y, z : Float; a, b : Int, String; myStruct : Struct(Vector2, Int);
 	: identifierList COLON typeList
 	; 
 
@@ -226,18 +224,17 @@ type
 	// (Int, Int) => Int, Int -- function type without a caller type
 	| functionType
 
+	// Struct(Int, Int) -- struct type
+	| structType
+
 	// [Int] -- list type
 	| listType
 
 	// IType -- interface type used for getting the type that implements the interface
 	| ITYPE
 
-	// Int -- type
+	// Int -- type, could be built-in or user-defined
 	| IDENTIFIER
-	;
-
-callerType
-	: IDENTIFIER
 	;
 
 functionCallerType
@@ -246,9 +243,18 @@ functionCallerType
 	: callerType LEFT_PAREN parameterTypeList RIGHT_PAREN DOUBLE_ARROW returnTypeList
 	;
 
+callerType
+	: IDENTIFIER
+	;
+
 functionType
 	// (Int, Int) => Int, Int -- function type without a caller type
 	: LEFT_PAREN parameterTypeList RIGHT_PAREN DOUBLE_ARROW returnTypeList
+	;
+
+structType
+	// Struct(Int, Int) -- struct type
+	: STRUCT_TYPE LEFT_PAREN parameterTypeList RIGHT_PAREN
 	;
 
 listType

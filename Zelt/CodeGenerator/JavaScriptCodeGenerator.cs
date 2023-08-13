@@ -60,7 +60,7 @@ namespace Zelt.CodeGenerator
             // Determine the type of statement
             if (statement is ZDeclarationStatement declarationStatement)
             {
-                GenerateCodeForDeclarationStatement(declarationStatement);
+                GenerateCodeForDeclarationStatement(declarationStatement, false);
             }
             else if (statement is ZAssignmentStatement assignmentStatement)
             {
@@ -96,9 +96,9 @@ namespace Zelt.CodeGenerator
 
         // ------------------------------ Statements ------------------------------
 
-        public void GenerateCodeForDeclarationStatement(ZDeclarationStatement statement)
+        public void GenerateCodeForDeclarationStatement(ZDeclarationStatement statement, bool hasAssignment = true)
         {
-            GenerateCodeForDeclaration(statement.Declarations);
+            GenerateCodeForDeclaration(statement.Declarations, hasAssignment);
             Stream.WriteLine(";");
         }
 
@@ -200,10 +200,10 @@ namespace Zelt.CodeGenerator
 
         // -------------------- Assignments and Declarations ----------------------
 
-        public void GenerateCodeForDeclaration(List<ZDeclaration> declarations)
+        public void GenerateCodeForDeclaration(List<ZDeclaration> declarations, bool hasAssignment = true)
         {
             string declarationsString = string.Join(", ", declarations.Select(v => v.Variable.Name));
-            Stream.Write($"let [{declarationsString}]");
+            Stream.Write($"let {(hasAssignment ? "[" : "")}{declarationsString}{(hasAssignment ? "]" : "")}");
         }
 
         public void GenerateCodeForAssignment(List<ZAssignment> assignments, bool isDeclaration)

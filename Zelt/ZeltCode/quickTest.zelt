@@ -1,11 +1,4 @@
 
 
-// Assignment to function return expressions
 
-myFunc := () => Int, Float {
-	return 5, 3.14;
-};
-
-x, y : Int, Float = myFunc();
-
-
+myStruct : Struct(Int, Float);

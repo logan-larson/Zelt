@@ -54,6 +54,7 @@ namespace Zelt.AST
         }, true);
         public static ZType Return = new ZType("Return", null, true);
         public static ZType FunctionCall = new ZType("FunctionCall", null, true);
+        //public static ZType Struct = new ZType("Struct", null, true);
         public static ZType Null = new ZType("Null", null, true);
         public static ZType Any = new ZType("Any", null, true); // Might have to use this for an empty type e.g. a := [] -- would be a := [Any] for now
         /*
@@ -138,6 +139,17 @@ namespace Zelt.AST
             ParameterTypes = parameterTypes;
             ReturnTypes = returnTypes;
             CallerType = callerType;
+        }
+    }
+
+    public class ZStructType : ZType
+    {
+        public List<ZType> MemberTypes;
+
+        public ZStructType(List<ZType> memberTypes)
+            : base($"Struct({ListMaker.ToCommaSeparatedList(memberTypes)}) => {ListMaker.ToCommaSeparatedList(memberTypes)}", null, true)
+        {
+            MemberTypes = memberTypes;
         }
     }
 

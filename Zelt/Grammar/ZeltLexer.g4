@@ -29,6 +29,7 @@ WS : [ \t\r\n]+ -> skip;
 //STRING_TYPE : 'String';
 //BOOL_TYPE : 'Bool';
 //FUNC: 'Func'; // I think I need this to be a keyword for now
+STRUCT_TYPE: 'Struct'; // Used for the type of structs
 PRINT: 'print';
 
 // Declarations

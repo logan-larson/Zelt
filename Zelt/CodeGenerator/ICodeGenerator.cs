@@ -22,11 +22,11 @@ namespace Zelt.CodeGenerator
 
         void GenerateCodeForStatement(IZStatement statement);
 
-        void GenerateCodeForDeclarationStatement(ZDeclarationStatement statement);
+        void GenerateCodeForDeclarationStatement(ZDeclarationStatement statement, bool hasAssignment);
         
         void GenerateCodeForAssignmentStatement(ZAssignmentStatement statement);
 
-        void GenerateCodeForDeclaration(List<ZDeclaration> declarations);
+        void GenerateCodeForDeclaration(List<ZDeclaration> declarations, bool hasAssignment);
 
         void GenerateCodeForAssignment(List<ZAssignment> assignments, bool isDeclaration);
 

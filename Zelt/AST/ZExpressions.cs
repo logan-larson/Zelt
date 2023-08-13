@@ -100,6 +100,23 @@ namespace Zelt.AST
         }
     }
 
+    public class ZStructConstructorExpression : IZExpression
+    {
+        public ZType Type { get; }
+
+        public string Name;
+
+        public List<IZExpression> Arguments;
+
+        public ZStructConstructorExpression(string name, List<IZExpression> arguments, ZStructType type)
+        {
+            Name = name;
+            Arguments = arguments;
+            Type = type;
+        }
+    }
+
+
     public class ZCallerExpression : IZExpression
     {
         public ZType Type { get; }

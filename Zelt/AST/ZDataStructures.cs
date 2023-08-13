@@ -115,20 +115,6 @@ namespace Zelt.AST
         }
     }
 
-    public class ZStructInstance
-    {
-        public List<ZVariable> Variables;
-
-        // Do I need a name?
-        public string Name;
-
-        public ZStructInstance(string name)
-        {
-            Variables = new List<ZVariable>();
-            Name = name;
-        }
-    }
-
     public class ZFunctionSignature
     {
         public string Name;

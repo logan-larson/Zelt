@@ -418,6 +418,53 @@ namespace Zelt.Visitors
             return new ZStructExpression(structDeclarations, structAssignments, structType);
         }
 
+        public override IZExpression VisitStructConstructor([NotNull] ZeltParser.StructConstructorContext context)
+        {
+            // Get the struct type
+            string structIdentifier = context.IDENTIFIER().GetText();
+            ZVariable structVariable = Variables[structIdentifier];
+
+            if (structVariable is null)
+            {
+                ErrorHandler.ThrowError($"The struct '{structIdentifier}' does not exist", context.Start.Line, context.Start.Column, SourceCodeLines);
+                return new ZNullExpression();
+            }
+
+            if (structVariable.Type is not ZStructType structType)
+            {
+                ErrorHandler.ThrowError($"The variable '{structIdentifier}' is not a struct", context.Start.Line, context.Start.Column, SourceCodeLines);
+                return new ZNullExpression();
+            }
+
+            // Make sure the number of parameters passed in matches the number of parameters the struct takes
+            List<IZExpression> argumentsList = new List<IZExpression>();
+
+            if (context.expressionList() is not null)
+            {
+                if (context.expressionList().expression().Length != structType.MemberTypes.Count)
+                {
+                    ErrorHandler.ThrowError($"The number of parameters passed in does not match the number of parameters the struct takes", context.Start.Line, context.Start.Column, SourceCodeLines);
+                    return new ZNullExpression();
+                }
+
+                // Make sure the parameters passed in match the struct's member types
+                for (int i = 0; i < context.expressionList().expression().Length; i++)
+                {
+                    IZExpression expression = Visit(context.expressionList().expression()[i]);
+
+                    if (expression.Type.CompareTo(structType.MemberTypes[i]) != 0)
+                    {
+                        ErrorHandler.ThrowError($"The parameter type does not match the struct's member type", context.Start.Line, context.Start.Column, SourceCodeLines);
+                        return new ZNullExpression();
+                    }
+
+                    argumentsList.Add(expression);
+                }
+            }
+
+            return new ZStructConstructorExpression(structVariable.Name, argumentsList, structType);
+        }
+
         // --------------------------------------------------------------------------------------------
         // ---------------------------- Primary Expressions No Production -----------------------------
         // --------------------------------------------------------------------------------------------

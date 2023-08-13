@@ -90,6 +90,8 @@ NOT : '!';
 AND : '&&';
 OR : '||';
 
+PIPE : '|';
+
 // Relational operators
 
 EQUALS : '==';

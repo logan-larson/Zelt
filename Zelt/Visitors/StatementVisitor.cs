@@ -66,6 +66,13 @@ namespace Zelt.Visitors
                 // Add assignments to the known variables
                 foreach (ZAssignment assignment in assignments)
                 {
+                    // If the variable type is a struct, then we need to add the variable identifier to the types list
+                    // Because the struct type is not defined until the assignment is made
+                    if (assignment.Variable.Type is ZStructType)
+                    {
+                        Types[assignment.Variable.Name] = assignment.Variable.Type;
+                    }
+
                     Variables[assignment.Variable.Name] = assignment.Variable;
                 }
 
@@ -78,6 +85,13 @@ namespace Zelt.Visitors
                 // Add assignments to the known variables
                 foreach (ZAssignment assignment in assignments)
                 {
+                    // If the variable type is a struct, then we need to add the variable identifier to the types list
+                    // Because the struct type is not defined until the assignment is made
+                    if (assignment.Variable.Type is ZStructType)
+                    {
+                        Types[assignment.Variable.Name] = assignment.Variable.Type;
+                    }
+
                     Variables[assignment.Variable.Name] = assignment.Variable;
                 }
 
@@ -86,6 +100,16 @@ namespace Zelt.Visitors
             else if (context.simpleAssignment() != null)
             {
                 assignments = new AssignmentVisitor(Types, Variables, SourceCodeLines, CallerType).VisitSimpleAssignment(context.simpleAssignment());
+
+                foreach (ZAssignment assignment in assignments)
+                {
+                    // If the variable type is a struct, then we need to add the variable identifier to the types list
+                    // Because the struct type is not defined until the assignment is made
+                    if (assignment.Variable.Type is ZStructType)
+                    {
+                        Types[assignment.Variable.Name] = assignment.Variable.Type;
+                    }
+                }
 
                 return new ZAssignmentStatement(assignments);
             }

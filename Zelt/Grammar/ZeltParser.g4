@@ -179,7 +179,7 @@ primaryExpression
 	| function								#functionExpression // (x : Int) => Int { return x * x; }, Int (y : Int) => Int { return caller + y; }
 	| functionCallNoCaller					#functionCallNoCallerExpression // add(x, Vector2(), 6)n
 	| struct								#structExpression // struct <implements Interface List> { x : Int; y : Int; }
-	//| structConstructor						#structConstructorExpression // Vector2(5, 6)
+	| structConstructor						#structConstructorExpression // Vector2(5, 6)
 	| LEFT_PAREN expression RIGHT_PAREN		#parenExpression // ( x + ( y + z ) )
 	;
 
@@ -200,9 +200,9 @@ struct
 	;
 
 // Vector2(5, 6)
-//structConstructor
-	//: IDENTIFIER LEFT_PAREN expressionList? RIGHT_PAREN
-	//;
+structConstructor
+	: PIPE IDENTIFIER PIPE LEFT_PAREN expressionList? RIGHT_PAREN
+	;
 
 
 // ---------------------------------------------------------------------------------------------

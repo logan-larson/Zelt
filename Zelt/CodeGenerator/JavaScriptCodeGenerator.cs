@@ -294,6 +294,9 @@ namespace Zelt.CodeGenerator
                 case ZStructExpression structExpression:
                     GenerateCodeForStructExpression(structExpression);
                     break;
+                case ZStructConstructorExpression structConstructorExpression:
+                    GenerateCodeForStructConstructorExpression(structConstructorExpression);
+                    break;
                 case ZCallerExpression callerExpression:
                     GenerateCodeForCallerExpression(callerExpression);
                     break;
@@ -418,7 +421,22 @@ namespace Zelt.CodeGenerator
                 Stream.WriteLine($"this.{assignment.Variable.Name} = {assignment.Variable.Name};");
             }
 
-            Stream.WriteLine("}");
+            Stream.Write("}");
+        }
+
+        public void GenerateCodeForStructConstructorExpression(ZStructConstructorExpression structConstructorExpression)
+        {
+            Stream.Write($"new {structConstructorExpression.Name}(");
+            foreach (var (expr, index) in structConstructorExpression.Arguments.Select((e, i) => (e, i)))
+            {
+                GenerateCodeForExpression(expr);
+
+                if (index < structConstructorExpression.Arguments.Count - 1)
+                {
+                    Stream.Write(", ");
+                }
+            }
+            Stream.Write(")");
         }
 
         public void GenerateCodeForCallerExpression(ZCallerExpression callerExpression)

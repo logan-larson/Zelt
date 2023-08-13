@@ -76,11 +76,6 @@ namespace Zelt.Visitors
                 return VisitParenExpression(parenExprContext);
             }
 
-            if (context is ZeltParser.UnderscoreExpressionContext underscoreExprContext)
-            {
-                return VisitUnderscoreExpression(underscoreExprContext);
-            }
-
             // Otherwise just visit the expression
             return base.VisitPrimaryExpression(context);
         }
@@ -90,14 +85,6 @@ namespace Zelt.Visitors
             if (context.functionIdentifier() is not null)
             {
                 return VisitFunctionIdentifier(context.functionIdentifier());
-            }
-
-            if (context.CALLER() is not null)
-            {
-                if (CallerType is null)
-                    ErrorHandler.ThrowError("Cannot use caller expression outside of a caller function", context.Start.Line, context.Start.Column, SourceCodeLines);
-
-                return new ZCallerExpression(CallerType ?? ZType.Null);
             }
 
             if (context.IDENTIFIER() is not null)
@@ -112,6 +99,10 @@ namespace Zelt.Visitors
 
             return base.VisitExpressionTail(context);
         }
+
+        // --------------------------------------------------------------------------------------------
+        // ---------------------------------- Primary Expressions -------------------------------------
+        // --------------------------------------------------------------------------------------------
 
         public override IZExpression VisitLiteral([NotNull] ZeltParser.LiteralContext context)
         {
@@ -205,114 +196,44 @@ namespace Zelt.Visitors
             return new ZListExpression(listElements, elementType ?? ZType.Null);
         }
 
-        public override IZExpression VisitListExpression([NotNull] ZeltParser.ListExpressionContext context)
-        {
-            List<IZExpression> listElements = new List<IZExpression>();
-            ZType? elementType = null;
-
-            foreach (var elementContext in context.list().listElement())
-            {
-                if (elementContext.DOUBLE_PERIOD() != null)
-                {
-                    var startExpr = Visit(elementContext.expression(0));
-                    var endExpr = Visit(elementContext.expression(1));
-
-                    if (startExpr.Type.CompareTo(ZType.Int) != 0 || endExpr.Type.CompareTo(ZType.Int) != 0)
-                    {
-                        ErrorHandler.ThrowError("Range expressions must be integers", context.Start.Line, context.Start.Column, SourceCodeLines);
-                    }
-
-                    var start = (ZIntegerExpression)startExpr;
-                    var end = (ZIntegerExpression)endExpr;
-
-                    if (elementType == null)
-                    {
-                        elementType = startExpr.Type;
-                    }
-
-                    if (startExpr.Type.CompareTo(elementType) != 0 || endExpr.Type.CompareTo(elementType) != 0)
-                    {
-                        ErrorHandler.ThrowError("All elements in a list must be of the same type", context.Start.Line, context.Start.Column, SourceCodeLines);
-                    }
-
-                    if (start.Value < end.Value)
-                    {
-                        for (var i = start.Value; i <= end.Value; i++)
-                        {
-                            listElements.Add(new ZIntegerExpression(i));
-                        }
-                    }
-                    else
-                    {
-                        for (var i = start.Value; i >= end.Value; i--)
-                        {
-                            listElements.Add(new ZIntegerExpression(i));
-                        }
-                    }
-                }
-                else
-                {
-                    var expr = Visit(elementContext.expression(0));
-
-                    if (elementType == null)
-                    {
-                        elementType = expr.Type;
-                    }
-
-                    if (expr.Type.CompareTo(elementType) != 0)
-                    {
-                        ErrorHandler.ThrowError("All elements in a list must be of the same type", context.Start.Line, context.Start.Column, SourceCodeLines);
-                    }
-
-                    listElements.Add(expr);
-                }
-            }
-
-            return new ZListExpression(listElements, elementType ?? ZType.Null);
-        }
-
-        public override IZExpression VisitCallerExpression([NotNull] ZeltParser.CallerExpressionContext context)
-        {
-                if (CallerType is null)
-                    ErrorHandler.ThrowError("Cannot use caller expression outside of a caller function", context.Start.Line, context.Start.Column, SourceCodeLines);
-
-                return new ZCallerExpression(CallerType ?? ZType.Null);
-        }
-
         public override IZExpression VisitFunction([NotNull] ZeltParser.FunctionContext context)
         {
             Dictionary<string, ZVariable> variables = new Dictionary<string, ZVariable>(Variables);
             // Get parameter values
             List<ZParameterValue> parameterValues = new List<ZParameterValue>();
-            foreach (var parameter in context.parameterDeclarationList().parameterDeclaration())
+
+            if (context.parameterDeclarationList() is not null) // If there are parameters
             {
-                if (parameter.declaration() is not null)
+                foreach (var parameter in context.parameterDeclarationList().parameterDeclaration())
                 {
-                    List<ZDeclaration> declarations = new DeclarationVisitor(Types, variables, SourceCodeLines).VisitDeclaration(parameter.declaration());
-                    foreach (var (declaration, position) in declarations.Select((d, i) => (d, i)))
+                    if (parameter.declaration() is not null)
                     {
-                        parameterValues.Add(new ZParameterValue(declaration.Variable.Name, declaration.Variable.Type, null, position));
+                        List<ZDeclaration> declarations = new DeclarationVisitor(Types, variables, SourceCodeLines).VisitDeclaration(parameter.declaration());
+                        foreach (var (declaration, position) in declarations.Select((d, i) => (d, i)))
+                        {
+                            parameterValues.Add(new ZParameterValue(declaration.Variable.Name, declaration.Variable.Type, null, position));
+                        }
                     }
-                }
-                else if (parameter.assignment() is not null)
-                {
-                    List<ZAssignment> assignments = new AssignmentVisitor(Types, variables, SourceCodeLines, CallerType).VisitAssignment(parameter.assignment());
-                    foreach (var (assignment, position) in assignments.Select((a, i) => (a, i)))
+                    else if (parameter.assignment() is not null)
                     {
-                        parameterValues.Add(new ZParameterValue(assignment.Variable.Name, assignment.Variable.Type, assignment.Expression, position));
+                        List<ZAssignment> assignments = new AssignmentVisitor(Types, variables, SourceCodeLines, CallerType).VisitAssignment(parameter.assignment());
+                        foreach (var (assignment, position) in assignments.Select((a, i) => (a, i)))
+                        {
+                            parameterValues.Add(new ZParameterValue(assignment.Variable.Name, assignment.Variable.Type, assignment.Expression, position));
+                        }
                     }
-                }
-                else if (parameter.inferAssignment() is not null)
-                {
-                    List<ZAssignment> assignments = new AssignmentVisitor(Types, variables, SourceCodeLines, CallerType).VisitInferAssignment(parameter.inferAssignment());
-                    foreach (var (assignment, position) in assignments.Select((a, i) => (a, i)))
+                    else if (parameter.inferAssignment() is not null)
                     {
-                        parameterValues.Add(new ZParameterValue(assignment.Variable.Name, assignment.Variable.Type, assignment.Expression, position));
+                        List<ZAssignment> assignments = new AssignmentVisitor(Types, variables, SourceCodeLines, CallerType).VisitInferAssignment(parameter.inferAssignment());
+                        foreach (var (assignment, position) in assignments.Select((a, i) => (a, i)))
+                        {
+                            parameterValues.Add(new ZParameterValue(assignment.Variable.Name, assignment.Variable.Type, assignment.Expression, position));
+                        }
                     }
-                }
-                else
-                {
-                    throw new NotImplementedException();
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
                 }
             }
 
@@ -386,88 +307,81 @@ namespace Zelt.Visitors
             return new ZFunctionExpression(parameterValues, returnTypes, body, caller, functionType);
         }
 
-        // TODO: Implement
-        public override IZExpression VisitFunctionCallNoCallerExpression([NotNull] ZeltParser.FunctionCallNoCallerExpressionContext context)
+        public override IZExpression VisitFunctionCallNoCaller([NotNull] ZeltParser.FunctionCallNoCallerContext context)
         {
-            /*
-                ZReturnExpression returnExpression = new ZReturnExpression(new List<ZType>());
+            // Make sure the function being called exists as a variable in the current scope
+            // Get the function variable
+            string functionIdentifier = context.functionIdentifier().IDENTIFIER().GetText();
+            ZVariable functionVariable = Variables[functionIdentifier];
 
-                if (context.functionCall().expression() is not null)
+            if (functionVariable == null)
+            {
+                ErrorHandler.ThrowError($"The function '{functionIdentifier}' does not exist", context.Start.Line, context.Start.Column, SourceCodeLines);
+                return new ZNullExpression();
+            }
+
+            // Get the function's parameter types
+            List<ZType> parameterTypes = new List<ZType>();
+            List<ZType> returnTypes = new List<ZType>();
+
+            if (functionVariable.Type is ZFunctionType functionType)
+            {
+                parameterTypes = functionType.ParameterTypes;
+                returnTypes = functionType.ReturnTypes;
+
+                // Make sure this function does not have a caller
+                if (functionType.CallerType is not null)
                 {
-                    // Example: foo.bar(1, "hello", 3.14)
-
-                    // Visit the caller expression
-                    IZExpression callerExpression = Visit(context.functionCall().expression());
-
-                    // If the variable exists use it
-                    string identifier = context.functionCall().functionIdentifier().IDENTIFIER().GetText();
-                    ZVariable functionVariable = Variables[identifier];
-
-
-                    // If the caller exists, use it
-                    string caller = context.functionCall().functionIdentifier().IDENTIFIER().GetText();
-                    ZVariable functionVariable = Variables[identifier];
-
-
-
+                    ErrorHandler.ThrowError($"The function '{functionIdentifier}' requires a caller, but you have not provided one", context.Start.Line, context.Start.Column, SourceCodeLines);
+                    return new ZNullExpression();
                 }
-                else if (context.functionCall().functionIdentifier() is not null)
+            }
+            else
+            {
+                ErrorHandler.ThrowError($"The variable '{functionIdentifier}' is not a function", context.Start.Line, context.Start.Column, SourceCodeLines);
+                return new ZNullExpression();
+            }
+
+            // Make sure the number of parameters passed in matches the number of parameters the function takes
+            List<IZExpression> argumentsList = new List<IZExpression>();
+
+            if (context.expressionList() is not null)
+            {
+
+                if (context.expressionList().expression().Length != parameterTypes.Count)
                 {
-                    // Example: foo(1, "hello", 3.14)
-
-                    // If the function variable exists in the current scope, use it
-                    string identifier = context.functionCall().functionIdentifier().IDENTIFIER().GetText();
-                    ZVariable functionVariable = Variables[identifier];
-
-                    if (functionVariable == null)
-                    {
-                        ErrorHandler.ThrowError("Function does not exist in scope.", context.Start.Line, context.Start.Column, SourceCodeLines);
-                        // This will never be reached, but the compiler doesn't know that
-                        return new ZReturnExpression(new List<ZType>());
-                    }
-
-                    // Check if the function variable is a function
-                    if (functionVariable.Type is not ZFunctionType)
-                    {
-                        ErrorHandler.ThrowError($"Variable '{functionVariable.Name}' is not a function", context.Start.Line, context.Start.Column, SourceCodeLines);
-                    }
-
-                    // Get the function type
-                    ZFunctionType functionType = (ZFunctionType)functionVariable.Type;
-
-                    // Check if the number of arguments matches the number of parameters
-                    if (functionType.ParameterTypes.Count != context.functionCall().expressionList().expression().Length)
-                    {
-                        ErrorHandler.ThrowError($"Function '{functionVariable.Name}' expects {functionType.ParameterTypes.Count} arguments but {context.functionCall().expressionList().expression().Length} were given", context.Start.Line, context.Start.Column, SourceCodeLines);
-                    }
-
-                    // Get the arguments
-                    List<IZExpression> arguments = new List<IZExpression>();
-                    foreach (var expression in context.functionCall().expressionList().expression())
-                    {
-                        arguments.Add(Visit(expression));
-                    }
-
-                    // Check if the types of the arguments match the types of the parameters
-                    foreach (var (argument, parameter) in arguments.Zip(functionType.ParameterTypes))
-                    {
-                        if (argument.Type.CompareTo(parameter) != 0)
-                        {
-                            ErrorHandler.ThrowError($"Argument type '{argument.Type}' does not match parameter type '{parameter}'", context.Start.Line, context.Start.Column, SourceCodeLines);
-                        }
-                    }
-
-                    // Return the return types of the function
-                    returnExpression = new ZReturnExpression(functionType.ReturnTypes);
-                }
-                else 
-                {
-                    throw new NotImplementedException();
+                    ErrorHandler.ThrowError($"The number of parameters passed in does not match the number of parameters the function takes", context.Start.Line, context.Start.Column, SourceCodeLines);
+                    return new ZNullExpression();
                 }
 
-                return returnExpression;
-            */
-            throw new NotImplementedException();
+                // Make sure the parameters passed in match the function's parameter types
+                for (int i = 0; i < context.expressionList().expression().Length; i++)
+                {
+                    IZExpression expression = Visit(context.expressionList().expression()[i]);
+
+                    if (expression.Type.CompareTo(parameterTypes[i]) != 0)
+                    {
+                        ErrorHandler.ThrowError($"The parameter type does not match the function's parameter type", context.Start.Line, context.Start.Column, SourceCodeLines);
+                        return new ZNullExpression();
+                    }
+
+                    argumentsList.Add(expression);
+                }
+            }
+
+            return new ZFunctionCallExpression(functionVariable.Name, argumentsList, returnTypes, ZType.FunctionCall);
+        }
+
+        // --------------------------------------------------------------------------------------------
+        // ---------------------------- Primary Expressions No Production -----------------------------
+        // --------------------------------------------------------------------------------------------
+
+        public override IZExpression VisitCallerExpression([NotNull] ZeltParser.CallerExpressionContext context)
+        {
+                if (CallerType is null)
+                    ErrorHandler.ThrowError("Cannot use caller expression outside of a caller function", context.Start.Line, context.Start.Column, SourceCodeLines);
+
+                return new ZCallerExpression(CallerType ?? ZType.Null);
         }
 
         public override IZExpression VisitIdentifierExpression([NotNull] ZeltParser.IdentifierExpressionContext context)
@@ -488,6 +402,18 @@ namespace Zelt.Visitors
             // Return the variable as an expression
             return new ZIdentifierExpression(identifier, Variables[identifier].Type);
         }
+
+        // IDK if these need to be implemented
+        // VisitParenExpression
+        public override IZExpression VisitParenExpression([NotNull] ZeltParser.ParenExpressionContext context)
+        {
+            return VisitExpression(context.expression());
+        }
+
+
+        // --------------------------------------------------------------------------------------------
+        // ---------------------------------- Precedence Expressions ----------------------------------
+        // --------------------------------------------------------------------------------------------
 
         public override IZExpression VisitUnaryExpression([NotNull] ZeltParser.UnaryExpressionContext context)
         {

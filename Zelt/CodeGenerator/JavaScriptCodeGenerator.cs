@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Zelt.AST;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Zelt.CodeGenerator
 {
@@ -79,12 +82,10 @@ namespace Zelt.CodeGenerator
             {
                 GenerateCodeForReturnStatement(returnStatement);
             }
-            /*
-            else if (statement is ZExpressionStatement)
+            else if (statement is ZExpressionStatement expressionStatement)
             {
-                GenerateCodeForExpressionStatement((ZExpressionStatement)statement, stream);
+                GenerateCodeForExpressionStatement(expressionStatement);
             }
-            */
             else
             {
                 throw new NotImplementedException();
@@ -97,20 +98,20 @@ namespace Zelt.CodeGenerator
 
         public void GenerateCodeForDeclarationStatement(ZDeclarationStatement statement)
         {
-            foreach (var declaration in statement.Declarations)
-            {
-                GenerateCodeForDeclaration(declaration);
-                Stream.WriteLine(";");
-            }
+            GenerateCodeForDeclaration(statement.Declarations);
+            Stream.WriteLine(";");
         }
 
         public void GenerateCodeForAssignmentStatement(ZAssignmentStatement statement)
         {
-            foreach (var assignment in statement.Assignments)
-            {
-                GenerateCodeForAssignment(assignment);
-                Stream.WriteLine(";");
-            }
+            GenerateCodeForAssignment(statement.Assignments, statement.Assignments[0].IsDeclaration);
+            Stream.WriteLine(";");
+        }
+
+        public void GenerateCodeForExpressionStatement(ZExpressionStatement statement)
+        {
+            GenerateCodeForExpression(statement.Expression);
+            Stream.WriteLine(";");
         }
 
         public void GenerateCodeForIfStatement(ZIfStatement statement)
@@ -156,62 +157,6 @@ namespace Zelt.CodeGenerator
             Stream.WriteLine("}");
         }
 
-        /*
-        public void GenerateCodeForEachStatement(ZEachStatement statement)
-        {
-            // Assuming all lists have the same size, use the first list for the loop range
-            ZListExpression? list = statement.ListsToIterate[0];
-            //ZIdentifierExpression? id = statement.ListsToIterate[0] as ZIdentifierExpression;
-
-            // Create an iteration variable for index
-            string iterator = "_i";
-            Stream.Write($"for(let {iterator} = 0; {iterator} < ");
-
-            if (id != null)
-            {
-                Stream.Write(id.Name);
-            }
-            else if (list != null)
-            {
-                GenerateCodeForListExpression(list);
-            }
-
-            Stream.WriteLine($".length; {iterator}++) {{");
-
-            // Declare the iteration variables and assign the respective value from each list
-            for (int i = 0; i < statement.IteratingVariables.Count; i++)
-            {
-                ZVariable variable = statement.IteratingVariables[i];
-
-                ZListExpression? l = statement.ListsToIterate[i] as ZListExpression;
-                ZIdentifierExpression? idExpr = statement.ListsToIterate[i] as ZIdentifierExpression;
-
-                if (idExpr != null)
-                {
-                    Stream.WriteLine($"let {variable.Name} = {idExpr.Name}[{iterator}];");
-                }
-                else if (l != null)
-                {
-                    Stream.Write($"let {variable.Name} = ");
-                    GenerateCodeForListExpression(l);
-                    Stream.WriteLine($"[{iterator}];");
-                }
-                else
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            // Generate code for the body of the each loop
-            foreach (IZStatement stmt in statement.Body)
-            {
-                GenerateCodeForStatement(stmt);
-            }
-
-            Stream.WriteLine("}");
-        }
-        */
-
         public void GenerateCodeForEachStatement(ZEachStatement statement)
         {
             // Assuming all lists have the same size, use the first list for the loop range
@@ -255,27 +200,64 @@ namespace Zelt.CodeGenerator
 
         // -------------------- Assignments and Declarations ----------------------
 
-        public void GenerateCodeForDeclaration(ZDeclaration declaration)
+        public void GenerateCodeForDeclaration(List<ZDeclaration> declarations)
         {
-            Stream.Write($"let {declaration.Variable.Name}");
+            string declarationsString = string.Join(", ", declarations.Select(v => v.Variable.Name));
+            Stream.Write($"let [{declarationsString}]");
         }
 
-        public void GenerateCodeForAssignment(ZAssignment assignment)
+        public void GenerateCodeForAssignment(List<ZAssignment> assignments, bool isDeclaration)
         {
-            if (assignment.IsDeclaration)
+
+            if (isDeclaration)
             {
-                GenerateCodeForDeclaration(new ZDeclaration(assignment.Variable));
+                GenerateCodeForDeclaration(assignments.Select(s => new ZDeclaration(s.Variable)).ToList());
 
-                Stream.Write($" = ");
-
-                GenerateCodeForExpression(assignment.Expression);
+                Stream.Write($" = [");
             }
             else
             {
-                Stream.Write($"{assignment.Variable.Name} = ");
-
-                GenerateCodeForExpression(assignment.Expression);
+                string identifiersString = string.Join(", ", assignments.Select(v => v.Variable.Name));
+                Stream.Write($"[{identifiersString}] = [");
             }
+
+            int j = 0;
+
+            while (j < assignments.Count)
+            {
+                var assignment = assignments[j];
+
+                if (assignment.Expression is ZFunctionCallExpression functionCallExpression)
+                {
+                    // If the assignment is a function call, only generate the function call expression once
+                    // and spread the return expressions of the function call
+                    Stream.Write("..."); // Need to spread the return expressions of the function call, they are returned as an array
+
+                    GenerateCodeForExpression(assignment.Expression);
+                    // Add assignments for each of the return types
+                    foreach (var retType in functionCallExpression.ReturnTypes)
+                    {
+                        if (j >= assignments.Count)
+                        {
+                            ErrorHandler.ThrowError("Internal compiler error: j >= identifiers.Count");
+                            break;
+                        }
+
+                        j += 1;
+                    }
+                }
+                else
+                {
+                    GenerateCodeForExpression(assignment.Expression);
+                }
+
+                if (j < assignments.Count - 1)
+                    Stream.Write(", ");
+
+                j += 1;
+            }
+
+            Stream.Write("]");
         }
 
         // ------------------------------ Expressions ------------------------------
@@ -316,6 +298,12 @@ namespace Zelt.CodeGenerator
                     break;
                 case ZChainedExpression chainedExpression:
                     GenerateCodeForChainedExpression(chainedExpression);
+                    break;
+                case ZFunctionCallExpression functionCallExpression:
+                    GenerateCodeForFunctionCallExpression(functionCallExpression);
+                    break;
+                case ZExpressionPlaceholder expressionPlaceholder:
+                    GenerateCodeForExpressionPlaceholder(expressionPlaceholder);
                     break;
                 default:
                     throw new NotImplementedException();
@@ -438,6 +426,30 @@ namespace Zelt.CodeGenerator
                 Stream.Write(".");
                 GenerateCodeForExpression(expression.Expressions[i]);
             }
+        }
+
+        public void GenerateCodeForFunctionCallExpression(ZFunctionCallExpression functionCall)
+        {
+            // Write the function name
+            Stream.Write(functionCall.Name + "(");
+
+            // Write the arguments, separated by commas
+            for (int i = 0; i < functionCall.Arguments.Count; i++)
+            {
+                GenerateCodeForExpression(functionCall.Arguments[i]);
+                if (i < functionCall.Arguments.Count - 1)
+                {
+                    Stream.Write(", ");
+                }
+            }
+
+            // Close the function call
+            Stream.Write(")");
+        }
+
+        public void GenerateCodeForExpressionPlaceholder(ZExpressionPlaceholder expressionPlaceholder)
+        {
+            //Stream.Write(expressionPlaceholder.Name);
         }
     }
 }

@@ -36,12 +36,12 @@ namespace Zelt.CodeGenerator
             throw new NotImplementedException();
         }
 
-        public void GenerateCodeForDeclaration(ZDeclaration declaration)
+        public void GenerateCodeForDeclaration(List<ZDeclaration> declarations)
         {
             throw new NotImplementedException();
         }
 
-        public void GenerateCodeForAssignment(ZAssignment assignment)
+        public void GenerateCodeForAssignment(List<ZAssignment> assignment, bool isDeclaration)
         {
             throw new NotImplementedException();
         }

@@ -288,6 +288,16 @@ namespace Zelt.AST
         }
     }
 
+    public class ZExpressionStatement : IZStatement
+    {
+        public IZExpression Expression;
+
+        public ZExpressionStatement(IZExpression expression)
+        {
+            Expression = expression;
+        }
+    }
+
     public class ZReturnStatement : IZStatement
     {
         public List<ZReturnValue> ReturnValues;

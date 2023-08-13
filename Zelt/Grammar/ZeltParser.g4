@@ -181,13 +181,11 @@ primaryExpression
 	| function								#functionExpression // (x : Int) => Int { return x * x; }, Int (y : Int) => Int { return caller + y; }
 	| functionCallNoCaller					#functionCallNoCallerExpression // add(x, Vector2(), 6)n
 	| LEFT_PAREN expression RIGHT_PAREN		#parenExpression // ( x + ( y + z ) )
-	| UNDERSCORE							#underscoreExpression // _  -- underscore discards the value of the expression
 	;
 
-// .add(x, Vector2(), 6); .caller; .x;
+// .add(x, Vector2(), 6); .x;
 expressionTail
 	: PERIOD functionIdentifier LEFT_PAREN expressionList? RIGHT_PAREN
-	| PERIOD CALLER
 	| PERIOD IDENTIFIER
 	;
 

@@ -53,6 +53,7 @@ namespace Zelt.AST
             ZInterface.Logical
         }, true);
         public static ZType Return = new ZType("Return", null, true);
+        public static ZType FunctionCall = new ZType("FunctionCall", null, true);
         public static ZType Null = new ZType("Null", null, true);
         public static ZType Any = new ZType("Any", null, true); // Might have to use this for an empty type e.g. a := [] -- would be a := [Any] for now
         /*

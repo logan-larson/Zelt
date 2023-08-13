@@ -26,9 +26,9 @@ namespace Zelt.CodeGenerator
         
         void GenerateCodeForAssignmentStatement(ZAssignmentStatement statement);
 
-        void GenerateCodeForDeclaration(ZDeclaration declaration);
+        void GenerateCodeForDeclaration(List<ZDeclaration> declarations);
 
-        void GenerateCodeForAssignment(ZAssignment assignment);
+        void GenerateCodeForAssignment(List<ZAssignment> assignments, bool isDeclaration);
 
         void GenerateCodeForExpression(IZExpression expression);
 

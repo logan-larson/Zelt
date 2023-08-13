@@ -108,7 +108,18 @@ namespace Zelt.AST
 
     public class ZFunctionCallExpression : IZExpression
     {
-        public ZType Type => throw new NotImplementedException();
+        public ZType Type { get; }
+        public string Name { get; }
+        public List<IZExpression> Arguments { get; }
+        public List<ZType> ReturnTypes { get; }
+
+        public ZFunctionCallExpression(string name, List<IZExpression> arguments, List<ZType> returnTypes, ZType type)
+        {
+            Name = name;
+            Arguments = arguments;
+            ReturnTypes = returnTypes;
+            Type = type;
+        }
     }
 
 
@@ -170,6 +181,16 @@ namespace Zelt.AST
         {
             ReturnTypes = returnTypes;
             Type = ZType.Return;
+        }
+    }
+
+    public class ZExpressionPlaceholder : IZExpression
+    {
+        public ZType Type { get; }
+
+        public ZExpressionPlaceholder(ZType type)
+        {
+            Type = type;
         }
     }
 

@@ -63,13 +63,37 @@ namespace Zelt.Visitors
 
             // Get the expressions
             List<IZExpression> expressions = new List<IZExpression>();
+            int expressionCount = 0;
             foreach (var expression in context.expressionList().expression())
             {
-                expressions.Add(new ExpressionVisitor(Types, Variables, SourceCodeLines, CallerType).VisitExpression(expression));
+                var expr = new ExpressionVisitor(Types, Variables, SourceCodeLines, CallerType).VisitExpression(expression);
+
+                if (expr is ZChainedExpression chainedExpression)
+                {
+                    if (chainedExpression.Expressions.Last().Type.CompareTo(ZType.FunctionCall) == 0)
+                    {
+                        ZFunctionCallExpression functionCallExpression = (ZFunctionCallExpression) chainedExpression.Expressions.Last();
+                        expressionCount += functionCallExpression.ReturnTypes.Count;
+                    }
+                    else
+                    {
+                        expressionCount += 1;
+                    }
+                }
+                else
+                {
+                        // TODO: Determine when this gets hit
+                    expressionCount += 1;
+                }
+
+                expressions.Add(expr);
             }
 
             // Check if the number of identifiers and expressions match
-            if (identifiers.Count != expressions.Count)
+            // The expressions count needs to include the number of return types for each of the functions in the expression list
+            // I think it does
+
+            if (identifiers.Count != expressionCount)
             {
                 string identifiersString = string.Join(", ", identifiers);
                 List<string> expressionsStrings = expressions.Select(e => e.Type.Name).ToList();
@@ -78,16 +102,92 @@ namespace Zelt.Visitors
                 ErrorHandler.ThrowError($"Uneven number of names and expressions\nNames: [{identifiersString}]\nExpression Types: [{expressionsString}]", context.Start.Line, context.Start.Column, SourceCodeLines);
             }
 
+            // Check if the types and expression types match
+            // Construct a list of expression types including the types from the function call's return types
+            List<ZType> expressionTypes = new List<ZType>();
+
+            foreach (var expr in expressions)
+            {
+                if (expr is ZChainedExpression chainedExpression)
+                {
+                    if (chainedExpression.Expressions.Last().Type.CompareTo(ZType.FunctionCall) == 0)
+                    {
+                        ZFunctionCallExpression functionCallExpression = (ZFunctionCallExpression) chainedExpression.Expressions.Last();
+                        expressionTypes.AddRange(functionCallExpression.ReturnTypes);
+                    }
+                    else
+                    {
+                        expressionTypes.Add(expr.Type);
+                    }
+                }
+                else
+                {
+                    expressionTypes.Add(expr.Type);
+                }
+            }
+
+            for (int i = 0; i < types.Count; i++)
+            {
+                if (types[i] != expressionTypes[i])
+                {
+                    ErrorHandler.ThrowError($"Type '{expressionTypes[i].Name}' cannot be assigned to type '{types[i].Name}'", context.Start.Line, context.Start.Column, SourceCodeLines);
+                }
+            }
+
             // Create the assignments
             List<ZAssignment> assignments = new List<ZAssignment>();
-            for (int i = 0; i < identifiers.Count; i++)
+
+            int j = 0;
+            while (j < identifiers.Count)
             {
-                var variable = new ZVariable(identifiers[i], types[i], true);
+                var expr = expressions[j];
+                    
+                if (expr is ZChainedExpression chainedExpression)
+                {
+                    if (chainedExpression.Expressions.Last().Type.CompareTo(ZType.FunctionCall) == 0)
+                    {
+                        ZFunctionCallExpression functionCallExpression = (ZFunctionCallExpression) chainedExpression.Expressions.Last();
 
-                variable.Line = context.Start.Line;
-                variable.Column = context.Start.Column;
+                        // Add assignments for each of the return types
+                        foreach (var retType in functionCallExpression.ReturnTypes)
+                        {
+                            if (j >= identifiers.Count)
+                            {
+                                ErrorHandler.ThrowError("Internal compiler error: j >= identifiers.Count", context.Start.Line, context.Start.Column, SourceCodeLines);
+                                break;
+                            }
 
-                assignments.Add(new ZAssignment(variable, expressions[i], true));
+                            var variable = new ZVariable(identifiers[j], retType, true);
+
+                            variable.Line = context.Start.Line;
+                            variable.Column = context.Start.Column;
+
+                            assignments.Add(new ZAssignment(variable, functionCallExpression, true));
+
+                            j += 1;
+                        }
+                    }
+                    else
+                    {
+                        var variable = new ZVariable(identifiers[j], expr.Type, true);
+
+                        variable.Line = context.Start.Line;
+                        variable.Column = context.Start.Column;
+
+                        assignments.Add(new ZAssignment(variable, expr, true));
+                    }
+                }
+                else
+                {
+                    var variable = new ZVariable(identifiers[j], expr.Type, true);
+
+                    variable.Line = context.Start.Line;
+                    variable.Column = context.Start.Column;
+
+                    assignments.Add(new ZAssignment(variable, expr, true));
+                }
+
+                j += 1;
             }
 
             return assignments;
@@ -115,13 +215,34 @@ namespace Zelt.Visitors
 
             // Get the expressions
             List<IZExpression> expressions = new List<IZExpression>();
+            int expressionCount = 0;
             foreach (var expression in context.expressionList().expression())
             {
-                expressions.Add(new ExpressionVisitor(Types, Variables, SourceCodeLines, CallerType).VisitExpression(expression));
+                var expr = new ExpressionVisitor(Types, Variables, SourceCodeLines, CallerType).VisitExpression(expression);
+
+                if (expr is ZChainedExpression chainedExpression)
+                {
+                    if (chainedExpression.Expressions.Last().Type.CompareTo(ZType.FunctionCall) == 0)
+                    {
+                        ZFunctionCallExpression functionCallExpression = (ZFunctionCallExpression) chainedExpression.Expressions.Last();
+                        expressionCount += functionCallExpression.ReturnTypes.Count;
+                    }
+                    else
+                    {
+                        // TODO: Determine when this gets hit
+                        expressionCount += 1;
+                    }
+                }
+                else
+                {
+                    expressionCount += 1;
+                }
+
+                expressions.Add(expr);
             }
 
             // Check if the number of identifiers and expressions match
-            if (identifiers.Count != expressions.Count)
+            if (identifiers.Count != expressionCount)
             {
                 string identifiersString = string.Join(", ", identifiers);
                 List<string> expressionsStrings = expressions.Select(e => e.Type.Name).ToList();
@@ -130,16 +251,62 @@ namespace Zelt.Visitors
                 ErrorHandler.ThrowError($"Uneven number of names and expressions\nNames: [{identifiersString}]\nExpression Types: [{expressionsString}]", context.Start.Line, context.Start.Column, SourceCodeLines);
             }
 
+            // Since it is type inference, we can't check if the types match
+
             // Create the assignments
             List<ZAssignment> assignments = new List<ZAssignment>();
-            for (int i = 0; i < identifiers.Count; i++)
+
+            int j = 0;
+            while (j < identifiers.Count)
             {
-                var variable = new ZVariable(identifiers[i], expressions[i].Type, true);
+                var expr = expressions[j];
+                    
+                if (expr is ZChainedExpression chainedExpression)
+                {
+                    if (chainedExpression.Expressions.Last().Type.CompareTo(ZType.FunctionCall) == 0)
+                    {
+                        ZFunctionCallExpression functionCallExpression = (ZFunctionCallExpression) chainedExpression.Expressions.Last();
 
-                variable.Line = context.Start.Line;
-                variable.Column = context.Start.Column;
+                        // Add assignments for each of the return types
+                        foreach (var retType in functionCallExpression.ReturnTypes)
+                        {
+                            if (j >= identifiers.Count)
+                            {
+                                ErrorHandler.ThrowError("Internal compiler error: j >= identifiers.Count", context.Start.Line, context.Start.Column, SourceCodeLines);
+                                break;
+                            }
 
-                assignments.Add(new ZAssignment(variable, expressions[i], true));
+                            var variable = new ZVariable(identifiers[j], retType, true);
+
+                            variable.Line = context.Start.Line;
+                            variable.Column = context.Start.Column;
+
+                            assignments.Add(new ZAssignment(variable, functionCallExpression, true));
+
+                            j += 1;
+                        }
+                    }
+                    else
+                    {
+                        var variable = new ZVariable(identifiers[j], expr.Type, true);
+
+                        variable.Line = context.Start.Line;
+                        variable.Column = context.Start.Column;
+
+                        assignments.Add(new ZAssignment(variable, expr, true));
+                    }
+                }
+                else
+                {
+                    var variable = new ZVariable(identifiers[j], expr.Type, true);
+
+                    variable.Line = context.Start.Line;
+                    variable.Column = context.Start.Column;
+
+                    assignments.Add(new ZAssignment(variable, expr, true));
+                }
+
+                j += 1;
             }
 
             return assignments;
@@ -156,24 +323,52 @@ namespace Zelt.Visitors
                 identifiers.Add(identifier.GetText());
             }
 
+            List<ZVariable> variables = new List<ZVariable>();
+
             // Check if the identifiers exist
             foreach (var identifier in identifiers)
             {
-                if (!Variables.ContainsKey(identifier))
+                var variable = Variables[identifier];
+                if (variable is null)
                 {
                     ErrorHandler.ThrowError($"Variable '{identifier}' does not exist", context.Start.Line, context.Start.Column, SourceCodeLines);
+                }
+                else
+                {
+                    variables.Add(variable);
                 }
             }
 
             // Get the expressions
             List<IZExpression> expressions = new List<IZExpression>();
+            int expressionCount = 0;
             foreach (var expression in context.expressionList().expression())
             {
-                expressions.Add(new ExpressionVisitor(Types, Variables, SourceCodeLines, CallerType).VisitExpression(expression));
+                var expr = new ExpressionVisitor(Types, Variables, SourceCodeLines, CallerType).VisitExpression(expression);
+
+                if (expr is ZChainedExpression chainedExpression)
+                {
+                    if (chainedExpression.Expressions.Last().Type.CompareTo(ZType.FunctionCall) == 0)
+                    {
+                        ZFunctionCallExpression functionCallExpression = (ZFunctionCallExpression) chainedExpression.Expressions.Last();
+                        expressionCount += functionCallExpression.ReturnTypes.Count;
+                    }
+                    else
+                    {
+                        // TODO: Determine when this gets hit
+                        expressionCount += 1;
+                    }
+                }
+                else
+                {
+                    expressionCount += 1;
+                }
+
+                expressions.Add(expr);
             }
 
             // Check if the number of identifiers and expressions match
-            if (identifiers.Count != expressions.Count)
+            if (identifiers.Count != expressionCount)
             {
                 string identifiersString = string.Join(", ", identifiers);
                 List<string> expressionsStrings = expressions.Select(e => e.Type.Name).ToList();
@@ -182,23 +377,94 @@ namespace Zelt.Visitors
                 ErrorHandler.ThrowError($"Uneven number of names and expressions\nNames: [{identifiersString}]\nExpression Types: [{expressionsString}]", context.Start.Line, context.Start.Column, SourceCodeLines);
             }
 
-            // Check if the identifier types match the expression types
-            for (int i = 0; i < identifiers.Count; i++)
+            // Check if the types and expression types match
+            // Construct a list of expression types including the types from the function call's return types
+            List<ZType> expressionTypes = new List<ZType>();
+
+            foreach (var expr in expressions)
             {
-                if (Variables[identifiers[i]].Type != expressions[i].Type)
+                if (expr is ZChainedExpression chainedExpression)
                 {
-                    ErrorHandler.ThrowError($"Type mismatch\nVariable '{identifiers[i]}' is of type '{Variables[identifiers[i]].Type.Name}'\nExpression is of type '{expressions[i].Type.Name}'", context.Start.Line, context.Start.Column, SourceCodeLines);
+                    if (chainedExpression.Expressions.Last().Type.CompareTo(ZType.FunctionCall) == 0)
+                    {
+                        ZFunctionCallExpression functionCallExpression = (ZFunctionCallExpression) chainedExpression.Expressions.Last();
+                        expressionTypes.AddRange(functionCallExpression.ReturnTypes);
+                    }
+                    else
+                    {
+                        expressionTypes.Add(expr.Type);
+                    }
+                }
+                else
+                {
+                    expressionTypes.Add(expr.Type);
+                }
+            }
+
+            for (int i = 0; i < variables.Count; i++)
+            {
+                if (variables[i].Type != expressionTypes[i])
+                {
+                    ErrorHandler.ThrowError($"Type '{expressionTypes[i].Name}' cannot be assigned to type '{variables[i].Type.Name}'", context.Start.Line, context.Start.Column, SourceCodeLines);
                 }
             }
 
             // Create the assignments
             List<ZAssignment> assignments = new List<ZAssignment>();
-            for (int i = 0; i < identifiers.Count; i++)
+
+            int j = 0;
+            while (j < identifiers.Count)
             {
-                var variable = Variables[identifiers[i]];
-                variable.IsDefined = true;
-                assignments.Add(new ZAssignment(variable, expressions[i], false));
+                var expr = expressions[j];
+                    
+                if (expr is ZChainedExpression chainedExpression)
+                {
+                    if (chainedExpression.Expressions.Last().Type.CompareTo(ZType.FunctionCall) == 0)
+                    {
+                        ZFunctionCallExpression functionCallExpression = (ZFunctionCallExpression) chainedExpression.Expressions.Last();
+
+                        // Add assignments for each of the return types
+                        foreach (var retType in functionCallExpression.ReturnTypes)
+                        {
+                            if (j >= identifiers.Count)
+                            {
+                                ErrorHandler.ThrowError("Internal compiler error: j >= identifiers.Count", context.Start.Line, context.Start.Column, SourceCodeLines);
+                                break;
+                            }
+
+                            var variable = new ZVariable(identifiers[j], retType, true);
+
+                            variable.Line = context.Start.Line;
+                            variable.Column = context.Start.Column;
+
+                            assignments.Add(new ZAssignment(variable, functionCallExpression, true));
+
+                            j += 1;
+                        }
+                    }
+                    else
+                    {
+                        var variable = new ZVariable(identifiers[j], expr.Type, true);
+
+                        variable.Line = context.Start.Line;
+                        variable.Column = context.Start.Column;
+
+                        assignments.Add(new ZAssignment(variable, expr, true));
+                    }
+                }
+                else
+                {
+                    var variable = new ZVariable(identifiers[j], expr.Type, true);
+
+                    variable.Line = context.Start.Line;
+                    variable.Column = context.Start.Column;
+
+                    assignments.Add(new ZAssignment(variable, expr, true));
+                }
+
+                j += 1;
             }
+
 
             return assignments;
         }

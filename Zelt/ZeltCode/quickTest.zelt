@@ -1,6 +1,11 @@
 
 
+// Assignment to function return expressions
 
-f := (x : Int) => Int {
-	return x + 1;
+myFunc := () => Int, Float {
+	return 5, 3.14;
 };
+
+x, y : Int, Float = myFunc();
+
+

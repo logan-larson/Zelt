@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Antlr4.Runtime;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -80,6 +81,21 @@ namespace Zelt.AST
             ReturnTypes = returnTypes;
             Body = body;
             Caller = caller;
+            Type = type;
+        }
+    }
+
+    public class ZStructExpression : IZExpression
+    {
+        public ZType Type { get; }
+
+        public List<ZDeclaration> Declarations;
+        public List<ZAssignment> Assignments;
+
+        public ZStructExpression(List<ZDeclaration> declarations, List<ZAssignment> assignments, ZStructType type)
+        {
+            Declarations = declarations;
+            Assignments = assignments;
             Type = type;
         }
     }

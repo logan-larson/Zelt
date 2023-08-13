@@ -372,6 +372,52 @@ namespace Zelt.Visitors
             return new ZFunctionCallExpression(functionVariable.Name, argumentsList, returnTypes, ZType.FunctionCall);
         }
 
+        public override IZExpression VisitStruct([NotNull] ZeltParser.StructContext context)
+        {
+            List<ZDeclaration> structDeclarations = new List<ZDeclaration>();
+            List<ZAssignment> structAssignments = new List<ZAssignment>();
+
+            // Visit the struct block to get the struct variables
+            if (context.structBlock() is not null)
+            {
+                // Setup the scope for the struct
+                Dictionary<string, ZVariable> structScope = new Dictionary<string, ZVariable>(Variables);
+
+                // Visit each declaration statement
+                foreach (var declaration in context.structBlock().declarationStatement())
+                {
+                    List<ZDeclaration> declarations = new DeclarationVisitor(Types, structScope, SourceCodeLines).VisitDeclaration(declaration.declaration());
+
+                    structDeclarations.AddRange(declarations);
+                }
+
+                // Visit each infer assignment statement
+                foreach (var inferAssignment in context.structBlock().inferAssignment())
+                {
+                    List<ZAssignment> assignments = new AssignmentVisitor(Types, structScope, SourceCodeLines).VisitInferAssignment(inferAssignment);
+
+                    structAssignments.AddRange(assignments);
+                }
+
+                // Visit each assignment statement
+                foreach (var assignment in context.structBlock().assignment())
+                {
+                    List<ZAssignment> assignments = new AssignmentVisitor(Types, structScope, SourceCodeLines).VisitAssignment(assignment);
+
+                    structAssignments.AddRange(assignments);
+                }
+            }
+
+            // Create the struct type
+            List<ZVariable> structVariables = structDeclarations.Select(d => d.Variable).ToList();
+            structVariables.AddRange(structAssignments.Select(a => a.Variable));
+
+            ZStructType structType = new ZStructType(structVariables.Select(v => v.Type).ToList());
+
+            // Create the struct expression
+            return new ZStructExpression(structDeclarations, structAssignments, structType);
+        }
+
         // --------------------------------------------------------------------------------------------
         // ---------------------------- Primary Expressions No Production -----------------------------
         // --------------------------------------------------------------------------------------------

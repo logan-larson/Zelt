@@ -1,4 +1,20 @@
 
 
 
-myStruct : Struct(Int, Float);
+MyStruct : Struct(Int, Float);
+
+MyStruct = struct {
+	x : Int;
+	y : Float;
+};
+
+
+Vector2 := struct {
+	x : Float;
+	y : Float;
+};
+
+
+myVector : Vector2 = Vector2(1.0, 2.0);
+
+

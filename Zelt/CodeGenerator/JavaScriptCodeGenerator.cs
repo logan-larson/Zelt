@@ -90,8 +90,6 @@ namespace Zelt.CodeGenerator
             {
                 throw new NotImplementedException();
             }
-            
-            Stream.WriteLine();
         }
 
         // ------------------------------ Statements ------------------------------
@@ -293,6 +291,9 @@ namespace Zelt.CodeGenerator
                 case ZFunctionExpression functionExpression:
                     GenerateCodeForFunctionExpression(functionExpression);
                     break;
+                case ZStructExpression structExpression:
+                    GenerateCodeForStructExpression(structExpression);
+                    break;
                 case ZCallerExpression callerExpression:
                     GenerateCodeForCallerExpression(callerExpression);
                     break;
@@ -375,6 +376,46 @@ namespace Zelt.CodeGenerator
             {
                 // Assuming there is a method to generate code for each statement
                 GenerateCodeForStatement(statement);
+            }
+
+            Stream.WriteLine("}");
+        }
+
+        public void GenerateCodeForStructExpression(ZStructExpression structExpression)
+        {
+            // Do the instantiation
+            Stream.Write("function(");
+
+            // Add declarations as parameters
+            for (int i = 0; i < structExpression.Declarations.Count + structExpression.Assignments.Count; i++)
+            {
+                if (i < structExpression.Declarations.Count)
+                {
+                    Stream.Write(structExpression.Declarations[i].Variable.Name);
+                }
+                else
+                {
+                    Stream.Write(structExpression.Assignments[i - structExpression.Declarations.Count].Variable.Name);
+                    Stream.Write(" = ");
+                    GenerateCodeForExpression(structExpression.Assignments[i - structExpression.Declarations.Count].Expression);
+                }
+
+                if (i < structExpression.Declarations.Count + structExpression.Assignments.Count - 1)
+                {
+                    Stream.Write(", ");
+                }
+            }
+
+            Stream.WriteLine(") {");
+
+            foreach (var declaration in structExpression.Declarations)
+            {
+                Stream.WriteLine($"this.{declaration.Variable.Name} = {declaration.Variable.Name};");
+            }
+
+            foreach (var assignment in structExpression.Assignments)
+            {
+                Stream.WriteLine($"this.{assignment.Variable.Name} = {assignment.Variable.Name};");
             }
 
             Stream.WriteLine("}");

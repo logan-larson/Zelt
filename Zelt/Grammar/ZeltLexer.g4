@@ -36,6 +36,7 @@ PRINT: 'print';
 
 STRUCT : 'struct';
 INTERFACE : 'interface';
+IMPLEMENTS : 'implements';
 ITYPE : 'IType';
 // ENUM : 'enum'; Don't know if we'll have enums yet
 

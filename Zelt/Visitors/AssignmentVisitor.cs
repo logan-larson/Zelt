@@ -128,7 +128,7 @@ namespace Zelt.Visitors
 
             for (int i = 0; i < types.Count; i++)
             {
-                if (types[i] != expressionTypes[i])
+                if (types[i].CompareTo(expressionTypes[i]) != 0)
                 {
                     ErrorHandler.ThrowError($"Type '{expressionTypes[i].Name}' cannot be assigned to type '{types[i].Name}'", context.Start.Line, context.Start.Column, SourceCodeLines);
                 }
@@ -403,7 +403,7 @@ namespace Zelt.Visitors
 
             for (int i = 0; i < variables.Count; i++)
             {
-                if (variables[i].Type != expressionTypes[i])
+                if (variables[i].Type.CompareTo(expressionTypes[i]) != 0)
                 {
                     ErrorHandler.ThrowError($"Type '{expressionTypes[i].Name}' cannot be assigned to type '{variables[i].Type.Name}'", context.Start.Line, context.Start.Column, SourceCodeLines);
                 }
@@ -437,7 +437,7 @@ namespace Zelt.Visitors
                             variable.Line = context.Start.Line;
                             variable.Column = context.Start.Column;
 
-                            assignments.Add(new ZAssignment(variable, functionCallExpression, true));
+                            assignments.Add(new ZAssignment(variable, functionCallExpression, false));
 
                             j += 1;
                         }
@@ -449,7 +449,7 @@ namespace Zelt.Visitors
                         variable.Line = context.Start.Line;
                         variable.Column = context.Start.Column;
 
-                        assignments.Add(new ZAssignment(variable, expr, true));
+                        assignments.Add(new ZAssignment(variable, expr, false));
                     }
                 }
                 else
@@ -459,7 +459,7 @@ namespace Zelt.Visitors
                     variable.Line = context.Start.Line;
                     variable.Column = context.Start.Column;
 
-                    assignments.Add(new ZAssignment(variable, expr, true));
+                    assignments.Add(new ZAssignment(variable, expr, false));
                 }
 
                 j += 1;

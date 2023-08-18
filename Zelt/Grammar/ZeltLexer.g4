@@ -28,8 +28,11 @@ WS : [ \t\r\n]+ -> skip;
 //FLOAT_TYPE : 'Float';
 //STRING_TYPE : 'String';
 //BOOL_TYPE : 'Bool';
-//FUNC: 'Func'; // I think I need this to be a keyword for now
+//FUNC: 'Func'; // I think I need this to be a keyword for now, SIKE
+
 STRUCT_TYPE: 'Struct'; // Used for the type of structs
+//INTERFACE_TYPE: 'Inter'; // Used for the type of interfaces
+//DICTIONARY_TYPE: 'Dict'; // Used for the type of dictionaries
 PRINT: 'print';
 
 // Declarations

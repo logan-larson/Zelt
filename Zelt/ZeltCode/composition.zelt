@@ -93,3 +93,53 @@ Output:
 Circle Volume: 100.48
 Square Volume: 18.0
 */
+
+
+
+
+
+
+
+// This is the pattern for all constructs in this language
+/*
+
+identifier  :          type          =  expression  ;
+-----------------------------------------------------
+
+myInteger   :          Int           =  5;
+
+myList      :      [ String ]        =  ["hello", "there"];
+
+myDict      :    { String, Int }     =  dict { ("hello", 2), ("there", 12) };
+
+myFunction  :   (Int, Int) => Int    =  (a : Int, b : Int) => Int { return a + b; };
+
+mySum       :          Int           =  myFunction( 4 , 2 ); // Evaluates to 6 because myFunction is just a sum function
+
+myCallerFun :   Int (Int) => Int     =  Int (v : Int) => Int { return caller * v; }; // Can specify a type that can call the function, allows for some cool things with interfaces
+
+callerRes   :          Int           =  myInteger(4); // Evaluates to 20, using myInteger from before
+
+Vector2     :  Struct(Float, Float)  =  struct { x : Float; y : Float };
+
+myVector    :        Vector2         =  Vector2( 2 , 3 ); // Constructor for Vector2
+
+INormalize  :  Interface( (Vector2) => Vector2 )  =  interface { normalize : (Vector2) => Vector2; };
+
+ITriple     :  Interface( IType () => IType )  =  interface { triple : IType () => IType };  // IType means the type that implements the interface
+
+MyIntStruct :      Struct(Int)       =  struct implements ITriple { x : Int; }; // Since MyIntStruct explicity implements ITriple, it is bound by contract to implement the 'triple' function
+
+triple      :  MyIntStruct () => MyIntStruct  =  MyIntStruct () => MyIntStruct { return MyIntStruct(caller.x * 3); };
+
+triple      :  MyFltStruct () => MyFltStruct  =  MyFltStruct () => MyFltStruct { return MyFltStruct(caller.x * 3); };
+
+MyFltStruct :     Struct(Float)      =  struct { x : Float; }; // MyFltStruct doesn't explicity implement the ITriple interface, but any function that requires a type of ITriple can be passed a MyFltStruct type
+
+tripleX2    :  ITriple () => ITriple =  ITriple () => ITriple { return caller.triple() * 2; };
+
+itripX2Res   :      MyIntStruct       =  MyIntStruct.tripleX2();
+
+ftripX2Res   :      MyFltStruct       =  MyFltStruct.tripleX2();
+
+*/

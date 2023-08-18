@@ -1,8 +1,4 @@
-# Zelt
-
-A programming language and toolchain web game development, designed with simplicity, consistency, and extensibility in mind.
-
-## Syntax Documentation
+## Zelt Language Syntax Documentation
 
 ### Introduction
 
@@ -86,26 +82,10 @@ Single uppercase letters, like `T`, are reserved for representing generic types.
 ITriple : Interface( T () => T ) = interface { triple : T () => T };
 ```
 
-### Interface Implementations
+### Explicit Interface Implementations
 
 Structs can explicitly implement interfaces by stating the interface name using the `implements` keyword.
 
 ```zelt
 MyIntStruct : Struct(Int) = struct implements ITriple { value : Int; };
 ```
-
-## Documentation
-
-TODO
-
-## Installation
-
-TODO
-
-## Building from Source
-
-TODO
-
-## Contributing
-
-TODO

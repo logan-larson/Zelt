@@ -3,32 +3,61 @@ parser grammar ZeltParser;
 options { tokenVocab=ZeltLexer; }
 
 
-// ---------------------------------------------------------------------------------------------
-// ------------------------------------- Program -----------------------------------------------
-// ---------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------
+// ---------------------------------------- Program -----------------------------------------
+// ------------------------------------------------------------------------------------------
 
 program : statement* EOF ;
 
 statement
 	: declarationStatement
 	| assignmentStatement
-	| controlFlowStatement
-	| printStatement
-	| returnStatement
+    | expressionStatement
+    | controlFlowStatement
+	| printStatement // TEMP
 	;
 
 // TEMP: I'm going to use this to test how far the parser gets
+// Eventually print() will be mapped to a standard library function or something like that
 printStatement : PRINT LEFT_PAREN expression RIGHT_PAREN SEMICOLON ;
 
 
-// ---------------------------------------------------------------------------------------------
-// ------------------------------------- Control Flow ------------------------------------------
-// ---------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------
+// ------------------------------------- Statements -----------------------------------------
+// ------------------------------------------------------------------------------------------
+
+// ------------------------------------- Declaration ----------------------------------------
+
+declarationStatement
+	: declaration SEMICOLON
+	;
+
+// ------------------------------------- Assignment -----------------------------------------
+
+assignmentStatement
+	: assignment SEMICOLON
+	| inferAssignment SEMICOLON
+	| simpleAssignment SEMICOLON
+	;
+
+// ------------------------------------- Expression -----------------------------------------
+
+expressionStatement
+    : expression SEMICOLON
+    ;
+
+// ------------------------------------ Control Flow ----------------------------------------
 
 controlFlowStatement
+    : conditionalStatement
+    | loopStatement
+    | jumpStatement
+    ;
+
+// --- Conditionals ---
+
+conditionalStatement
 	: ifStatement
-	| whileStatement
-	| eachStatement
 	;
 
 ifStatement: IF expression block (ELSE elseIfStatement)? ;
@@ -38,23 +67,42 @@ elseIfStatement
 	| block
 	;
 
+// --- Loops ---
+
+loopStatement
+    : whileStatement
+    | eachStatement
+    ;
+
 whileStatement : WHILE expression block ;
 
 eachStatement : EACH declarationList IN expressionList block ;
+
+// --- Jumps ---
+
+jumpStatement
+    : returnStatement
+    | breakStatement
+    | continueStatement
+    ;
 
 returnStatement
 	: RETURN SEMICOLON
 	| RETURN expression (COMMA expression)* SEMICOLON
 	;
 
+breakStatement
+    : BREAK SEMICOLON
+    ;
 
-// ---------------------------------------------------------------------------------------------
-// ------------------------------------- Declarations ------------------------------------------
-// ---------------------------------------------------------------------------------------------
+continueStatement
+    : CONTINUE SEMICOLON
+    ;
 
-declarationStatement
-	: declaration SEMICOLON
-	;
+
+// ------------------------------------------------------------------------------------------
+// ------------------------------------ Declarations ----------------------------------------
+// ------------------------------------------------------------------------------------------
 
 declarationList
 	: declaration (COMMA declaration)*
@@ -64,16 +112,6 @@ declaration
 	// x : Int; y, z : Float; a, b : Int, String; myStruct : Struct(Vector2, Int);
 	: identifierList COLON typeList
 	; 
-
-interfaceDeclaration
-	// interface Splittable { IType split() => IType, IType; }
-	: INTERFACE IDENTIFIER interfaceBlock
-	;
-
-structDeclaration
-	// struct Vector2 { x : Int; y : Int; }
-	: STRUCT IDENTIFIER (COLON identifierList)? structBlock
-	;
 
 parameterDeclarationList
 	: parameterDeclaration (COMMA parameterDeclaration)*
@@ -88,22 +126,42 @@ parameterDeclaration
 	| inferAssignment
 	;
 
-functionSignature
-	// add(Int, Int) => Int
-	: ITYPE functionIdentifier LEFT_PAREN parameterTypeList? RIGHT_PAREN DOUBLE_ARROW returnTypeList SEMICOLON
-	| functionIdentifier LEFT_PAREN parameterTypeList? RIGHT_PAREN DOUBLE_ARROW returnTypeList SEMICOLON
-	;
+// Similarly stated below, interface and struct declarations are just like variable declarations
+// It is just an identifier with an associated type
+// Interface type   ==>   Interface( <list of function types> )
+// Struct type      ==>   Struct( <list of types> )
+// Function type    ==>   (Int, Int) => Int
+                    |     Int () => Int
+                    |     () => Void // Debating on the Void keyword
+
+// These aren't declarations, these are interface and struct definition expressions
+//interfaceDeclaration
+	// interface Splittable { IType split() => IType, IType; }
+	//: INTERFACE IDENTIFIER interfaceBlock
+	//;
+
+// 
+//structDeclaration
+	// struct Vector2 { x : Int; y : Int; }
+	//: STRUCT IDENTIFIER (COLON identifierList)? structBlock
+	//;
+
+// A function signature is just an identifier with a function type
+// So IDK if it even needs its own declaration
+// add : (Int, Int) => Int;
+//functionSignatureDeclaration
+	//: functionSignature SEMICOLON
+	//;
+
+//functionSignature
+    //: ITYPE functionIdentifier LEFT_PAREN parameterTypeList? RIGHT_PAREN DOUBLE_ARROW returnTypeList
+    //| functionIdentifier LEFT_PAREN parameterTypeList? RIGHT_PAREN DOUBLE_ARROW returnTypeList
+    //;
 
 
 // ---------------------------------------------------------------------------------------------
 // ------------------------------------- Assignments -------------------------------------------
 // ---------------------------------------------------------------------------------------------
-
-assignmentStatement
-	: assignment SEMICOLON
-	| inferAssignment SEMICOLON
-	| simpleAssignment SEMICOLON
-	;
 
 assignment
 	// x : Int = 5; y, z : Float, Int = 3.14, 3;
@@ -125,6 +183,7 @@ simpleAssignment
 // ------------------------------------- Expressions -------------------------------------------
 // ---------------------------------------------------------------------------------------------
 
+// rename to functionDefintion
 function
 
 	// function no caller type
@@ -135,6 +194,10 @@ function
 	// Vector2 (v : Vector2) => Vector2 { return Vector2(caller.x + x, caller.y + y); }
 	| type LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
 	;
+
+structDefinition
+    : STRUCT 
+    ;
 
 expressionList
 	: expression (COMMA expression)*

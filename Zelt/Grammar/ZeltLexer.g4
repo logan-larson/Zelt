@@ -53,8 +53,10 @@ IN : 'in';
 // Misc
 CALLER : 'caller';
 RETURN : 'return';
-// BREAK : 'break';
-// CONTINUE : 'continue';
+BREAK : 'break';
+CONTINUE : 'continue';
+APPEND : 'append';
+EXIT : 'exit';
 
 
 

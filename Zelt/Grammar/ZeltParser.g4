@@ -10,10 +10,7 @@ options { tokenVocab=ZeltLexer; }
 program : statement* EOF ;
 
 statement
-	: declarationStatement
-	| assignmentStatement
-    | expressionStatement
-    | controlFlowStatement
+    : expression SEMICOLON
 	| printStatement // TEMP
 	;
 
@@ -26,187 +23,22 @@ printStatement : PRINT LEFT_PAREN expression RIGHT_PAREN SEMICOLON ;
 // ------------------------------------- Statements -----------------------------------------
 // ------------------------------------------------------------------------------------------
 
-// ------------------------------------- Declaration ----------------------------------------
-
-declarationStatement
-	: declaration SEMICOLON
-	;
-
-// ------------------------------------- Assignment -----------------------------------------
-
-assignmentStatement
-	: assignment SEMICOLON
-	| inferAssignment SEMICOLON
-	| simpleAssignment SEMICOLON
-	;
-
-// ------------------------------------- Expression -----------------------------------------
-
-expressionStatement
-    : expression SEMICOLON
-    ;
-
-// ------------------------------------ Control Flow ----------------------------------------
-
-controlFlowStatement
-    : conditionalStatement
-    | loopStatement
-    | jumpStatement
-    ;
-
-// --- Conditionals ---
-
-conditionalStatement
-	: ifStatement
-	;
-
-ifStatement: IF expression block (ELSE elseIfStatement)? ;
-
-elseIfStatement
-	: ifStatement
-	| block
-	;
-
-// --- Loops ---
-
-loopStatement
-    : whileStatement
-    | eachStatement
-    ;
-
-whileStatement : WHILE expression block ;
-
-eachStatement : EACH declarationList IN expressionList block ;
-
-// --- Jumps ---
-
-jumpStatement
-    : returnStatement
-    | breakStatement
-    | continueStatement
-    ;
-
-returnStatement
-	: RETURN SEMICOLON
-	| RETURN expression (COMMA expression)* SEMICOLON
-	;
-
-breakStatement
-    : BREAK SEMICOLON
-    ;
-
-continueStatement
-    : CONTINUE SEMICOLON
-    ;
+// EVERYTHING IS AN EXPRESSION, LITERALLY EVERYTHING!!! NO STATEMENTS ALLOWED
 
 
 // ------------------------------------------------------------------------------------------
-// ------------------------------------ Declarations ----------------------------------------
+// ------------------------------------ Expressions -----------------------------------------
 // ------------------------------------------------------------------------------------------
-
-declarationList
-	: declaration (COMMA declaration)*
-	;
-
-declaration
-	// x : Int; y, z : Float; a, b : Int, String; myStruct : Struct(Vector2, Int);
-	: identifierList COLON typeList
-	; 
-
-parameterDeclarationList
-	: parameterDeclaration (COMMA parameterDeclaration)*
-	;
-
-parameterDeclaration
-	// x : Int
-	: declaration
-	// x : Int = 5
-	| assignment
-	// x := 5
-	| inferAssignment
-	;
-
-// Similarly stated below, interface and struct declarations are just like variable declarations
-// It is just an identifier with an associated type
-// Interface type   ==>   Interface( <list of function types> )
-// Struct type      ==>   Struct( <list of types> )
-// Function type    ==>   (Int, Int) => Int
-                    |     Int () => Int
-                    |     () => Void // Debating on the Void keyword
-
-// These aren't declarations, these are interface and struct definition expressions
-//interfaceDeclaration
-	// interface Splittable { IType split() => IType, IType; }
-	//: INTERFACE IDENTIFIER interfaceBlock
-	//;
-
-// 
-//structDeclaration
-	// struct Vector2 { x : Int; y : Int; }
-	//: STRUCT IDENTIFIER (COLON identifierList)? structBlock
-	//;
-
-// A function signature is just an identifier with a function type
-// So IDK if it even needs its own declaration
-// add : (Int, Int) => Int;
-//functionSignatureDeclaration
-	//: functionSignature SEMICOLON
-	//;
-
-//functionSignature
-    //: ITYPE functionIdentifier LEFT_PAREN parameterTypeList? RIGHT_PAREN DOUBLE_ARROW returnTypeList
-    //| functionIdentifier LEFT_PAREN parameterTypeList? RIGHT_PAREN DOUBLE_ARROW returnTypeList
-    //;
-
-
-// ---------------------------------------------------------------------------------------------
-// ------------------------------------- Assignments -------------------------------------------
-// ---------------------------------------------------------------------------------------------
-
-assignment
-	// x : Int = 5; y, z : Float, Int = 3.14, 3;
-	: identifierList COLON typeList IS_DEFINED_AS expressionList
-	;
-
-inferAssignment
-	// z := 5; y, z := 3.14, 3;
-	: identifierList COLON IS_DEFINED_AS expressionList
-	;
-
-simpleAssignment
-	// z = 5; y, z = 3.14, 3;
-	: identifierList IS_DEFINED_AS expressionList
-	;
-
-
-// ---------------------------------------------------------------------------------------------
-// ------------------------------------- Expressions -------------------------------------------
-// ---------------------------------------------------------------------------------------------
-
-// rename to functionDefintion
-function
-
-	// function no caller type
-	// (x : Int, y : Int) => Int { return x + y; }
-	: LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
-
-	// function with caller type
-	// Vector2 (v : Vector2) => Vector2 { return Vector2(caller.x + x, caller.y + y); }
-	| type LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
-	;
-
-structDefinition
-    : STRUCT 
-    ;
 
 expressionList
 	: expression (COMMA expression)*
 	;
-
 expression
 	: primaryExpression expressionTail*
 	| logicalExpression
 	;
+
+// ------------------------------------- Precedence -----------------------------------------
 
 // x && y, x || y
 logicalExpression
@@ -234,43 +66,169 @@ unaryExpression
 	| NOT expression
 	;
 
+// --------------------------------------- Primary ------------------------------------------
+
 primaryExpression
 	: literal								#literalExpression // 5, 3.14, "Hello, World!", true, false, null
 	| list									#listExpression // [1, 2, 3, 4, 5], [1..10], [1..10, 2], [1, 2..10]
+	| dictionary						    #dictionaryExpression
 	| CALLER								#callerExpression // caller
 	| IDENTIFIER							#identifierExpression // x, y, z, _a, _b, _c
-	| function								#functionExpression // (x : Int) => Int { return x * x; }, Int (y : Int) => Int { return caller + y; }
+	| functionDefintion					    #functionDefintionExpression // (x : Int) => Int { return x * x; }, Int (y : Int) => Int { return caller + y; }
 	| functionCallNoCaller					#functionCallNoCallerExpression // add(x, Vector2(), 6)n
-	| struct								#structExpression // struct <implements Interface List> { x : Int; y : Int; }
+	| structDefinition						#structDefinitionExpression // struct <implements Interface List> { x : Int; y : Int; }
 	| structConstructor						#structConstructorExpression // Vector2(5, 6)
+    | declaration                           #declarationExpression
+    | assignment                            #assignmentExpression
+    | inferAssignment                       #inferAssignmentExpression
+    | simpleAssignment                      #simpleAssignmentExpression
+    | if                                    #ifExpression
+    | while                                 #whileExpression
+    | each                                  #eachExpression
+    | jump                                  #jumpExpression
+    | append                                #appendExpression
 	| LEFT_PAREN expression RIGHT_PAREN		#parenExpression // ( x + ( y + z ) )
 	;
 
 // .add(x, Vector2(), 6); .x;
 expressionTail
 	: PERIOD functionIdentifier LEFT_PAREN expressionList? RIGHT_PAREN
+	//: PERIOD functionCall
 	| PERIOD IDENTIFIER
 	;
 
+// --------------------------------- Function Expressions -----------------------------------
+
+// TODO: Can I rename this to functionCall and apply it to the expressionTail above
 // add(x, Vector2(), 6)
 functionCallNoCaller
 	: functionIdentifier LEFT_PAREN expressionList? RIGHT_PAREN
 	;
 
+functionDefintion
+
+	// function no caller type
+	// (x : Int, y : Int) => Int { return x + y; }
+	: LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
+
+	// function with caller type
+	// Vector2 (v : Vector2) => Vector2 { return Vector2(caller.x + x, caller.y + y); }
+	| type LEFT_PAREN parameterDeclarationList? RIGHT_PAREN DOUBLE_ARROW typeList block
+	;
+
+parameterDeclarationList
+	: parameterDeclaration (COMMA parameterDeclaration)*
+	;
+
+// Does not include simpleAssignment because the identifier needs to be declared for a function definition
+parameterDeclaration
+	// x : Int
+	: declaration
+    // Default parameter values
+	// x : Int = 5
+	| assignment
+	// x := 5
+	| inferAssignment
+	;
+
+// ----------------------------------- Struct Expressions -----------------------------------
+
 // struct <implements Interface List> { x : Int; y : Int; }
-struct
+structDefinition
 	: STRUCT (IMPLEMENTS typeList)? structBlock
 	;
 
-// Vector2(5, 6)
+// |Vector2|(5, 6)
 structConstructor
 	: PIPE IDENTIFIER PIPE LEFT_PAREN expressionList? RIGHT_PAREN
 	;
 
 
-// ---------------------------------------------------------------------------------------------
-// --------------------------------------- Types -----------------------------------------------
-// ---------------------------------------------------------------------------------------------
+// -------------------------------- Declaration Expressions ---------------------------------
+
+declarationList
+	: declaration(COMMA declaration)*
+	;
+
+declaration
+	// x : Int; y, z : Float; a, b : Int, String; myStruct : Struct(Vector2, Int);
+	: identifierList COLON typeList
+	; 
+
+
+// --------------------------------- Assignment Expressions ---------------------------------
+
+assignment
+	// x : Int = 5; y, z : Float, Int = 3.14, 3;
+	: identifierList COLON typeList IS_DEFINED_AS expressionList
+	;
+
+inferAssignment
+	// z := 5; y, z := 3.14, 3;
+	: identifierList COLON IS_DEFINED_AS expressionList
+	;
+
+simpleAssignment
+	// z = 5; y, z = 3.14, 3;
+	: identifierList IS_DEFINED_AS expressionList
+	;
+
+// -------------------------------- Conditional Expressions ---------------------------------
+
+if
+    : IF LEFT_PAREN expression RIGHT_PAREN (DOUBLE_ARROW returnTypeList)? block (ELSE elseIf)?
+    ;
+
+elseIf
+	: if
+	| block
+	;
+
+// ------------------------------------ Loop Expressions ------------------------------------
+
+
+while
+    : WHILE LEFT_PAREN expression RIGHT_PAREN (DOUBLE_ARROW returnTypeList)? block (EXIT block)?
+    ;
+
+each
+    : EACH LEFT_PAREN declaration (COMMA declaration)* IN expressionList RIGHT_PAREN (DOUBLE_ARROW returnTypeList)?
+        block (EXIT block)?
+    ;
+
+
+// ------------------------------------ Jump Expressions ------------------------------------
+
+jump
+    : return
+    | break
+    | continue
+    ;
+
+return
+	: RETURN
+	| RETURN expression (COMMA expression)*
+	;
+
+break
+    : BREAK
+    ;
+
+continue
+    : CONTINUE
+    ;
+
+// Not exactly a jump expression, also not going to be a language feature just yet
+append
+    : APPEND
+    ;
+
+
+// ------------------------------------------------------------------------------------------
+// ----------------------------------------- Types ------------------------------------------
+// ------------------------------------------------------------------------------------------
+
+// --------------------------------------- Type Lists ---------------------------------------
 
 typeList
 	// Int, Float, [Int], (Int, Int) => Int, Int (Int) => Int
@@ -287,6 +245,8 @@ returnTypeList
 	: type (COMMA type)*
 	;
 
+// ------------------------------------- Singular Types -------------------------------------
+
 type
 	// String (Int, Int) => Int, Int -- function type with a caller type
 	: functionCallerType
@@ -297,9 +257,16 @@ type
 	// Struct(Int, Int) -- struct type
 	| structType
 
+	// Interface( (Int) => Int ) -- interface type
+	| interfaceType
+
 	// [Int] -- list type
 	| listType
 
+	// {String, Int} -- dictionary type
+	| dictType
+
+    // TODO: Figure out how I'm going to do generics
 	// IType -- interface type used for getting the type that implements the interface
 	| ITYPE
 
@@ -317,6 +284,10 @@ callerType
 	: IDENTIFIER
 	;
 
+functionTypeList
+    : functionType (COMMA functionType)*
+    ;
+
 functionType
 	// (Int, Int) => Int, Int -- function type without a caller type
 	: LEFT_PAREN parameterTypeList RIGHT_PAREN DOUBLE_ARROW returnTypeList
@@ -327,9 +298,19 @@ structType
 	: STRUCT_TYPE LEFT_PAREN parameterTypeList RIGHT_PAREN
 	;
 
+interfaceType
+	// Interface( (Int) => Int) -- interface type
+	: INTERFACE_TYPE LEFT_PAREN functionTypeList? RIGHT_PAREN
+	;
+
 listType
 	// [Int] -- list type
 	: LEFT_BRACKET type RIGHT_BRACKET
+	;
+
+dictType
+	// {String, Int} -- dictionary type
+	: LEFT_BRACE type COMMA type RIGHT_BRACE
 	;
 
 
@@ -337,6 +318,7 @@ listType
 // ------------------------------------- Literals ----------------------------------------------
 // ---------------------------------------------------------------------------------------------
 
+// TODO: This could use tweaking now with expressionTail
 identifierList
 	// x, _y, z123, R2D2
 	: IDENTIFIER (COMMA IDENTIFIER)*
@@ -364,6 +346,15 @@ listElement
 	| expression DOUBLE_PERIOD expression
 	;
 
+dictionary
+	// {(1, 2), (3, 4)} ; {("hello", 2), ("there", 4)} 
+	: LEFT_BRACE (dictionaryElement (COMMA dictionaryElement)*)? RIGHT_BRACE
+	;
+
+dictionaryElement
+	: LEFT_PAREN expression COMMA expression RIGHT_PAREN
+	;
+
 functionIdentifier
 	// add, render
 	: IDENTIFIER
@@ -378,13 +369,13 @@ block
 	: LEFT_BRACE statement* RIGHT_BRACE;
 
 interfaceBlock
-	// { IType add(IType x) => IType; IType square() => IType; retString() => String }
-	: LEFT_BRACE functionSignature* RIGHT_BRACE
+	// { add : IType (IType x) => IType; square : IType () => IType; retString() => String };
+	: LEFT_BRACE declaration* RIGHT_BRACE
 	;
 
 structBlock
 	// { x : Int; y : Float; }
-	: LEFT_BRACE (declarationStatement | inferAssignment SEMICOLON | assignment SEMICOLON )* RIGHT_BRACE
+	: LEFT_BRACE (declaration | inferAssignment SEMICOLON | assignment SEMICOLON )* RIGHT_BRACE
 	;
 
 

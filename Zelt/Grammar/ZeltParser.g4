@@ -33,6 +33,7 @@ printStatement : PRINT LEFT_PAREN expression RIGHT_PAREN SEMICOLON ;
 expressionList
 	: expression (COMMA expression)*
 	;
+
 expression
 	: primaryExpression expressionTail*
 	| logicalExpression
@@ -75,7 +76,7 @@ primaryExpression
 	| CALLER								#callerExpression // caller
 	| IDENTIFIER							#identifierExpression // x, y, z, _a, _b, _c
 	| functionDefintion					    #functionDefintionExpression // (x : Int) => Int { return x * x; }, Int (y : Int) => Int { return caller + y; }
-	| functionCallNoCaller					#functionCallNoCallerExpression // add(x, Vector2(), 6)n
+	| functionCall                          #functionCallExpression // add(x, Vector2(), 6)n
 	| structDefinition						#structDefinitionExpression // struct <implements Interface List> { x : Int; y : Int; }
 	| structConstructor						#structConstructorExpression // Vector2(5, 6)
     | declaration                           #declarationExpression
@@ -86,14 +87,14 @@ primaryExpression
     | while                                 #whileExpression
     | each                                  #eachExpression
     | jump                                  #jumpExpression
-    | append                                #appendExpression
 	| LEFT_PAREN expression RIGHT_PAREN		#parenExpression // ( x + ( y + z ) )
 	;
 
-// .add(x, Vector2(), 6); .x;
 expressionTail
-	: PERIOD functionIdentifier LEFT_PAREN expressionList? RIGHT_PAREN
-	//: PERIOD functionCall
+    // .add(Vector2(1, 1));     function concatination??
+	//: PERIOD functionIdentifier LEFT_PAREN expressionList? RIGHT_PAREN
+	: PERIOD functionCall
+    // .x;                      property accessor??
 	| PERIOD IDENTIFIER
 	;
 
@@ -101,7 +102,7 @@ expressionTail
 
 // TODO: Can I rename this to functionCall and apply it to the expressionTail above
 // add(x, Vector2(), 6)
-functionCallNoCaller
+functionCall
 	: functionIdentifier LEFT_PAREN expressionList? RIGHT_PAREN
 	;
 
@@ -188,12 +189,11 @@ elseIf
 
 
 while
-    : WHILE LEFT_PAREN expression RIGHT_PAREN (DOUBLE_ARROW returnTypeList)? block (EXIT block)?
+    : WHILE LEFT_PAREN expression RIGHT_PAREN block
     ;
 
 each
-    : EACH LEFT_PAREN declaration (COMMA declaration)* IN expressionList RIGHT_PAREN (DOUBLE_ARROW returnTypeList)?
-        block (EXIT block)?
+    : EACH LEFT_PAREN declaration (COMMA declaration)* IN expressionList RIGHT_PAREN block
     ;
 
 
@@ -217,12 +217,6 @@ break
 continue
     : CONTINUE
     ;
-
-// Not exactly a jump expression, also not going to be a language feature just yet
-append
-    : APPEND
-    ;
-
 
 // ------------------------------------------------------------------------------------------
 // ----------------------------------------- Types ------------------------------------------
@@ -268,7 +262,7 @@ type
 
     // TODO: Figure out how I'm going to do generics
 	// IType -- interface type used for getting the type that implements the interface
-	| ITYPE
+	//| ITYPE
 
 	// Int -- type, could be built-in or user-defined
 	| IDENTIFIER
@@ -323,7 +317,7 @@ identifierList
 	// x, _y, z123, R2D2
 	: IDENTIFIER (COMMA IDENTIFIER)*
 	// myVector.x, myPlayer.myVector.y
-	| IDENTIFIER PERIOD IDENTIFIER (COMMA IDENTIFIER PERIOD IDENTIFIER)*
+	//| IDENTIFIER PERIOD IDENTIFIER (COMMA IDENTIFIER PERIOD IDENTIFIER)*
 	;
 
 literal

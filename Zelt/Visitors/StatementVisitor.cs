@@ -48,6 +48,16 @@ namespace Zelt.Visitors
             CallerType = callerType ?? ZType.Null;
         }
 
+        public override ZExpressionStatement VisitStatement([NotNull] ZeltParser.StatementContext context)
+        {
+            var exprVisitor = new ExpressionVisitor(Types, Variables, SourceCodeLines);
+
+            var expr = exprVisitor.VisitExpression(context.expression());
+
+            return new ZExpressionStatement(expr);
+        }
+
+        /*
         public override ZDeclarationStatement VisitDeclarationStatement([NotNull] ZeltParser.DeclarationStatementContext context)
         {
             List<ZDeclaration> declarations = new DeclarationVisitor(Types, Variables, SourceCodeLines).VisitDeclaration(context.declaration());
@@ -283,5 +293,6 @@ namespace Zelt.Visitors
 
             return new ZEachStatement(iteratingVariables, listsToIterate, body);
         }
+        */
     }
 }

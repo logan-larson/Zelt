@@ -110,7 +110,7 @@ class Program
         var fileContents = File.ReadAllText(inputFilenames[0]);
         
         // Someday, we'll need to handle multiple files
-        string[] sourceCodeLines = File.ReadAllLines(outputFilename);
+        string[] sourceCodeLines = File.ReadAllLines(inputFilenames[0]);
 
         readInputTime = TimeOnly.FromDateTime(DateTime.Now) - beginStepTime;
         beginStepTime = TimeOnly.FromDateTime(DateTime.Now);

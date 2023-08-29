@@ -1,0 +1,96 @@
+
+x : Int = 5;
+y : Int = 6;
+
+
+/*
+So every construct in the language is an expression. But, not every expression evaluates
+to a value. Some expressions evaluate to Void, which can also be the return type for a
+function.
+
+A majority of the language constructs you are used to evaluating to Void still evaluate to
+Void. Such as, the 'if statement'.
+*/
+
+// This statement has the return type of Void
+
+if (x < y) {
+    x = x + 1;
+} else {
+    print(y);
+}; 
+
+
+/*
+That being said you can return values from an if statement to utilize it like an expression
+*/
+// This statement has the return type of Int, so it can be assigned
+
+// Technically, you don't need to specify the return type because it is inferred
+z : Int = if (x < y) => Int { 
+    return x;
+} else {
+    return y;
+};
+
+z : Int = if (x < y) {
+    x = x + 1;
+    return x;
+} else {
+    return y;
+};
+
+/* The verbosity difference between the ternary operator in other languages isn't that much
+different which is why I chose to not include it
+
+x < y ? print(x) : print(y);
+    vs.
+if (x < y) { print(x); } else { print(y); };
+
+Also if I end up allowing single statements without {} to be blocks, then the statement could
+be reduced to this
+
+if (x < y) print(x); else print y;
+
+z := x < y ? x : y;
+    vs.
+z := if (x < y) return x; else return y; // It's definetly longer, but not the primary concern
+
+*/
+
+
+
+/*
+Constructs with a Void value
+- Types/Struct definitions
+- Interface definitions
+- Each loops
+- While loops
+- Switch statements
+- If statement (with a Void return type)
+- Function call (with a Void return type)
+- Assignment expressions
+- Function signatures
+- Module definitions
+
+Constructs with a non-Void value
+- Variables
+- Literals
+- Lists
+- Dictionaries
+- Arithmetic expressions
+- Relational expressions
+- Logical expressions
+- Struct instances
+- Function definitions
+- If statements (with a non-Void return type)
+- Function calls (with a non-Void return type)
+-
+
+*/
+
+
+
+
+
+

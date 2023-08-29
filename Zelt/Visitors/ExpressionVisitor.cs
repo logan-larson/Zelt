@@ -82,10 +82,12 @@ namespace Zelt.Visitors
 
         public override IZExpression VisitExpressionTail([NotNull] ZeltParser.ExpressionTailContext context)
         {
+            /*
             if (context.functionIdentifier() is not null)
             {
                 return VisitFunctionIdentifier(context.functionIdentifier());
             }
+            */
 
             if (context.IDENTIFIER() is not null)
             {
@@ -198,6 +200,7 @@ namespace Zelt.Visitors
             return new ZListExpression(listElements, elementType ?? ZType.Null);
         }
 
+        /*
         public override IZExpression VisitFunction([NotNull] ZeltParser.FunctionContext context)
         {
             Dictionary<string, ZVariable> variables = new Dictionary<string, ZVariable>(Variables);
@@ -308,7 +311,9 @@ namespace Zelt.Visitors
 
             return new ZFunctionExpression(parameterValues, returnTypes, body, caller, functionType);
         }
+        */
 
+        /*
         public override IZExpression VisitFunctionCallNoCaller([NotNull] ZeltParser.FunctionCallNoCallerContext context)
         {
             // Make sure the function being called exists as a variable in the current scope
@@ -373,7 +378,9 @@ namespace Zelt.Visitors
 
             return new ZFunctionCallExpression(functionVariable.Name, argumentsList, returnTypes, ZType.FunctionCall);
         }
+        */
 
+        /*
         public override IZExpression VisitStruct([NotNull] ZeltParser.StructContext context)
         {
             List<ZDeclaration> structDeclarations = new List<ZDeclaration>();
@@ -419,6 +426,7 @@ namespace Zelt.Visitors
             // Create the struct expression
             return new ZStructExpression(structDeclarations, structAssignments, structType);
         }
+        */
 
         public override IZExpression VisitStructConstructor([NotNull] ZeltParser.StructConstructorContext context)
         {

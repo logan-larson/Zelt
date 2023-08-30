@@ -10,6 +10,7 @@ namespace Zelt.AST
 
     public interface IZStatement { }
 
+    /*
     public class ZDeclarationStatement : IZStatement
     {
         public List<ZDeclaration> Declarations;
@@ -29,17 +30,29 @@ namespace Zelt.AST
             Assignments = assignments;
         }
     }
+    */
 
+    /// <summary>
+    /// Represents a statement that is just an expression.
+    /// </summary>
     public class ZExpressionStatement : IZStatement
     {
+        /// <summary>
+        /// The expression that is the statement.
+        /// </summary>
         public IZExpression Expression;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ZExpressionStatement"/> class.
+        /// </summary>
+        /// <param name="expression">The expression that is the statement.</param>
         public ZExpressionStatement(IZExpression expression)
         {
             Expression = expression;
         }
     }
 
+    /*
     public class ZReturnStatement : IZStatement
     {
         public List<ZReturnValue> ReturnValues;
@@ -90,4 +103,5 @@ namespace Zelt.AST
             Body = body;
         }
     }
+    */
 }

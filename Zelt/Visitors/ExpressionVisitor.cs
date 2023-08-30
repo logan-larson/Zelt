@@ -631,7 +631,8 @@ namespace Zelt.Visitors
                 return current;
             }
 
-            return new ZBinaryExpression(expressions, ops);
+            //return new ZBinaryExpression(expressions, ops);
+            return new ZBinaryExpression(expressions[0], expressions[1], ops[0]);
         }
 
         public override IZExpression VisitAddExpression([NotNull] ZeltParser.AddExpressionContext context)
@@ -682,7 +683,8 @@ namespace Zelt.Visitors
                 return current;
             }
 
-            return new ZBinaryExpression(expressions, ops);
+            //return new ZBinaryExpression(expressions, ops);
+            return new ZBinaryExpression(expressions[0], expressions[1], ops[0]);
         }
 
         public override IZExpression VisitRelationalExpression([NotNull] ZeltParser.RelationalExpressionContext context)
@@ -745,7 +747,8 @@ namespace Zelt.Visitors
                 return current;
             }
 
-            return new ZBinaryExpression(expressions, ops);
+            //return new ZBinaryExpression(expressions, ops);
+            return new ZBinaryExpression(expressions[0], expressions[1], ops[0]);
         }
 
         public override IZExpression VisitLogicalExpression([NotNull] ZeltParser.LogicalExpressionContext context)
@@ -796,7 +799,8 @@ namespace Zelt.Visitors
                 return current;
             }
 
-            return new ZBinaryExpression(expressions, ops);
+            //return new ZBinaryExpression(expressions, ops);
+            return new ZBinaryExpression(expressions[0], expressions[1], ops[0]);
         }
     }
 }

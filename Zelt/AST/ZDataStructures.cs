@@ -14,14 +14,14 @@ namespace Zelt.AST
         /// <summary>
         /// The statements that make up the program
         /// </summary>
-        public List<IZStatement> Statements { get; set;}
+        public List<ZStatement> Statements { get; set;}
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ZProgram"/> class.
         /// </summary>
         public ZProgram()
         {
-            Statements = new List<IZStatement>();
+            Statements = new List<ZStatement>();
         }
     }
 

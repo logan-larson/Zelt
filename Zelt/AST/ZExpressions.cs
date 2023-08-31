@@ -176,7 +176,7 @@ namespace Zelt.AST
         /// <summary>
         /// Gets a list of statements that make up the body of the function.
         /// </summary>
-        public List<IZStatement> Body;
+        public List<ZStatement> Body;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ZFunctionExpression"/> class with the specified parameters, return types, body, caller, and function type.
@@ -186,7 +186,7 @@ namespace Zelt.AST
         /// <param name="body">List of statements that make up the body of the function.</param>
         /// <param name="caller">The type of the object that's calling the function, if any.</param>
         /// <param name="type">The function's type.</param>
-        public ZFunctionExpression(List<ZParameterValue> parameterValues, List<ZType> returnTypes, List<IZStatement> body, ZType? caller, ZType type)
+        public ZFunctionExpression(List<ZParameterValue> parameterValues, List<ZType> returnTypes, List<ZStatement> body, ZType? caller, ZType type)
         {
             ParameterValues = parameterValues;
             ReturnTypes = returnTypes;
@@ -424,14 +424,14 @@ namespace Zelt.AST
         /// <summary>
         /// Gets the operator that's being applied to the expression.
         /// </summary>
-        public ZUnaryOperator? Operator;
+        public ZUnaryOperator Operator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ZUnaryExpression"/> class with the specified expression and operator.
         /// </summary>
         /// <param name="expression">The expression that's being operated on.</param>
         /// <param name="operator">The operator that's being applied to the expression.</param>
-        public ZUnaryExpression(IZExpression expression, ZUnaryOperator? @operator = null)
+        public ZUnaryExpression(IZExpression expression, ZUnaryOperator @operator)
         {
             Expression = expression;
             Operator = @operator;
@@ -460,12 +460,7 @@ namespace Zelt.AST
         /// <summary>
         /// Gets the operator that's being applied to the left and right expressions.
         /// </summary>
-        public ZBinaryOperator? Operator;
-
-        /* Why did I allow multiple expressions and operators?
-        public List<IZExpression> Expressions;
-        public List<ZBinaryOperator> Operators;
-        */
+        public ZBinaryOperator Operator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ZBinaryExpression"/> class with the specified left and right expressions and binary operator.
@@ -473,12 +468,12 @@ namespace Zelt.AST
         /// <param name="left">The left-hand side expression.</param>
         /// <param name="right">The right-hand side expression.</param>
         /// <param name="operator">The binary operator.</param>
-        public ZBinaryExpression(IZExpression left, IZExpression right, ZBinaryOperator? @operator = null)
+        public ZBinaryExpression(IZExpression left, IZExpression right, ZBinaryOperator @operator)
         {
             Left = left;
             Right = right;
             Operator = @operator;
-            Type = Operator?.ReturnType ?? Left.Type;
+            Type = Operator.ReturnType;
         }
 
         /*

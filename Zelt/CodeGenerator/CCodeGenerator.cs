@@ -7,6 +7,7 @@ using Zelt.AST;
 
 namespace Zelt.CodeGenerator
 {
+    /*
     public class CCodeGenerator : ICodeGenerator
     {
         public StreamWriter Stream { get; set; }
@@ -21,27 +22,7 @@ namespace Zelt.CodeGenerator
             throw new NotImplementedException();
         }
 
-        public void GenerateCodeForStatement(IZStatement statement)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void GenerateCodeForDeclarationStatement(ZDeclarationStatement statement, bool hasAssignment)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void GenerateCodeForAssignmentStatement(ZAssignmentStatement statement)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void GenerateCodeForDeclaration(List<ZDeclaration> declarations, bool hasAssignment)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void GenerateCodeForAssignment(List<ZAssignment> assignment, bool isDeclaration)
+        public void GenerateCodeForStatement(ZStatement statement)
         {
             throw new NotImplementedException();
         }
@@ -55,5 +36,16 @@ namespace Zelt.CodeGenerator
         {
             throw new NotImplementedException();
         }
+
+        public void GenerateCodeForDeclaration(List<ZDeclaration> declarations, bool hasAssignment = true)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void GenerateCodeForAssignment(List<ZAssignment> assignments, bool isDeclaration)
+        {
+            throw new NotImplementedException();
+        }
     }
+    */
 }

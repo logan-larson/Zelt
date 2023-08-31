@@ -9,9 +9,15 @@ using Zelt.Grammar;
 
 namespace Zelt.Visitors
 {
+    /// <summary>
+    /// Visits programs.
+    /// </summary>
     public class ProgramVisitor : ZeltParserBaseVisitor<ZProgram>
     {
-        public Dictionary<string, ZType> Types { get; private set; } = new Dictionary<string, ZType>()
+        /// <summary>
+        /// The types known to this scope which is the global scope.
+        /// </summary>
+        private Dictionary<string, ZType> _types { get; set; } = new Dictionary<string, ZType>()
         {
             { "Int", ZType.Int },
             { "Float", ZType.Float },
@@ -20,22 +26,36 @@ namespace Zelt.Visitors
             { "Null", ZType.Null },
         };
 
-        // Global scope variables, functions, structs (type definitions)
-        public Dictionary<string, ZVariable> Variables { get; private set; } = new Dictionary<string, ZVariable>();
+        /// <summary>
+        /// The variables known to this scope which is the global scope.
+        /// </summary>
+        private Dictionary<string, ZVariable> _variables { get; set; } = new Dictionary<string, ZVariable>();
 
-        public string[] SourceCodeLines { get; private set; }
+        /// <summary>
+        /// The source code lines.
+        /// </summary>
+        private string[] _sourceCodeLines { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ProgramVisitor"/> class.
+        /// </summary>
+        /// <param name="sourceCodeLines">The source code lines.</param>
         public ProgramVisitor(string[] sourceCodeLines)
         {
-            SourceCodeLines = sourceCodeLines;
+            _sourceCodeLines = sourceCodeLines;
         }
 
+        /// <summary>
+        /// Visits a program.
+        /// </summary>
+        /// <param name="context">The parser tree context.</param>
+        /// <returns>A <see cref="ZProgram"/> node.</returns>
         public override ZProgram VisitProgram([NotNull] ZeltParser.ProgramContext context)
         {
             ZProgram program = new ZProgram();
             // Visit each statement in the program
 
-            StatementVisitor statementVisitor = new StatementVisitor(Types, Variables, SourceCodeLines);
+            StatementVisitor statementVisitor = new StatementVisitor(_types, _variables, _sourceCodeLines);
 
             foreach (ZeltParser.StatementContext statement in context.statement())
             {
@@ -54,7 +74,7 @@ namespace Zelt.Visitors
             */
 
             // Type check the program
-            TypeChecker.CheckVariableDeclarationTypes(Variables, SourceCodeLines);
+            TypeChecker.CheckVariableDeclarationTypes(_variables, _sourceCodeLines);
 
             return program;
         }

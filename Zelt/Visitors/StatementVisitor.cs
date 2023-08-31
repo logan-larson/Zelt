@@ -15,10 +15,15 @@ using System.ComponentModel;
 
 namespace Zelt.Visitors
 {
-    public partial class StatementVisitor : ZeltParserBaseVisitor<IZStatement>
+    /// <summary>
+    /// Visits statements.
+    /// </summary>
+    public class StatementVisitor : ZeltParserBaseVisitor<ZStatement>
     {
-
-        public Dictionary<string, ZType> Types { get; private set; } = new Dictionary<string, ZType>()
+        /// <summary>
+        /// The types known to this scope.
+        /// </summary>
+        private Dictionary<string, ZType> _types { get; set; } = new Dictionary<string, ZType>()
         {
             { "Int", ZType.Int },
             { "Float", ZType.Float },
@@ -27,14 +32,28 @@ namespace Zelt.Visitors
             { "Null", ZType.Null }, // Temporary type, will be removed when I add structs
         };
 
-        // This represents the variables that are currently in scope
-        public Dictionary<string, ZVariable> Variables { get; private set; } = new Dictionary<string, ZVariable>();
+        /// <summary>
+        /// Represents the variables that are currently in scope.
+        /// </summary>
+        private Dictionary<string, ZVariable> _variables { get; set; } = new Dictionary<string, ZVariable>();
 
-        public string[] SourceCodeLines { get; private set; }
+        /// <summary>
+        /// The source code lines.
+        /// </summary>
+        private string[] _sourceCodeLines { get; set; }
 
-        // Used to keep track of the type of the variable that called the current function
-        public ZType CallerType { get; private set; } = ZType.Null;
+        /// <summary>
+        /// Represents the type of the variable that called the current function. It is null if the current function does not have a caller.
+        /// </summary>
+        private ZType _callerType { get; set; } = ZType.Null;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StatementVisitor"/> class.
+        /// </summary>
+        /// <param name="types">The types known to this scope.</param>
+        /// <param name="variables">The variables known to this scope.</param>
+        /// <param name="sourceCodeLines">The source code lines.</param>
+        /// <param name="callerType">The type of the variable that called the current function. Null by default</param>
         public StatementVisitor(
             Dictionary<string, ZType> types,
             Dictionary<string, ZVariable> variables,
@@ -42,19 +61,24 @@ namespace Zelt.Visitors
             ZType? callerType = null
         )
         {
-            Types = types;
-            Variables = variables;
-            SourceCodeLines = sourceCodeLines;
-            CallerType = callerType ?? ZType.Null;
+            _types = types;
+            _variables = variables;
+            _sourceCodeLines = sourceCodeLines;
+            _callerType = callerType ?? ZType.Null;
         }
 
-        public override ZExpressionStatement VisitStatement([NotNull] ZeltParser.StatementContext context)
+        /// <summary>
+        /// Visits a statement.
+        /// </summary>
+        /// <param name="context">The parser tree context.</param>
+        /// <returns>A <see cref="ZStatement"/> node.</returns>
+        public override ZStatement VisitStatement([NotNull] ZeltParser.StatementContext context)
         {
-            var exprVisitor = new ExpressionVisitor(Types, Variables, SourceCodeLines);
+            var exprVisitor = new ExpressionVisitor(_types, _variables, _sourceCodeLines);
 
             var expr = exprVisitor.VisitExpression(context.expression());
 
-            return new ZExpressionStatement(expr);
+            return new ZStatement(expr);
         }
 
         /*

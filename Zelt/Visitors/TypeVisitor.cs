@@ -9,21 +9,34 @@ using Zelt.Grammar;
 
 namespace Zelt.Visitors
 {
+    /// <summary>
+    /// Visits types.
+    /// </summary>
     public class TypeVisitor : ZeltParserBaseVisitor<ZType>
     {
-        public Dictionary<string, ZType> Types { get; private set; }
-        public string[] SourceCodeLines { get; private set; }
+        private Dictionary<string, ZType> _types { get; set; }
+        private string[] _sourceCodeLines { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TypeVisitor"/> class.
+        /// </summary>
+        /// <param name="types">The types known to this scope.</param>
+        /// <param name="sourceCodeLines">The source code lines.</param>
         public TypeVisitor(Dictionary<string, ZType> types, string[] sourceCodeLines)
         {
-            Types = types;
-            SourceCodeLines = sourceCodeLines;
+            _types = types;
+            _sourceCodeLines = sourceCodeLines;
         }
 
+        /// <summary>
+        /// Visits a type.
+        /// </summary>
+        /// <param name="context">The parser tree context.</param>
+        /// <returns>A <see cref="ZType"/> node.</returns>
         public override ZType VisitType([NotNull] ZeltParser.TypeContext context)
         {
             // Check if the type is already defined
-            if (context.IDENTIFIER() != null && Types.TryGetValue(context.IDENTIFIER().GetText(), out ZType? type))
+            if (context.IDENTIFIER() != null && _types.TryGetValue(context.IDENTIFIER().GetText(), out ZType? type))
             {
                 return type;
             }
@@ -52,15 +65,20 @@ namespace Zelt.Visitors
             // If the type is never defined, the type checker will throw an error
             ZType newType = new ZType(context.IDENTIFIER().GetText(), null);
 
-            Types.Add(context.IDENTIFIER().GetText(), newType);
+            _types.Add(context.IDENTIFIER().GetText(), newType);
 
             return newType;
         }
 
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
         public override ZType VisitCallerType([NotNull] ZeltParser.CallerTypeContext context)
         {
             // Check if the type is already defined
-            if (context.IDENTIFIER() != null && Types.TryGetValue(context.IDENTIFIER().GetText(), out ZType? type))
+            if (context.IDENTIFIER() != null && _types.TryGetValue(context.IDENTIFIER().GetText(), out ZType? type))
             {
                 return type;
             }
@@ -69,11 +87,16 @@ namespace Zelt.Visitors
             // If the type is never defined, the type checker will throw an error
             ZType newType = new ZType(context.IDENTIFIER().GetText(), null);
 
-            Types.Add(context.IDENTIFIER().GetText(), newType);
+            _types.Add(context.IDENTIFIER().GetText(), newType);
 
             return newType;
         }
 
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
         public override ZListType VisitListType([NotNull] ZeltParser.ListTypeContext context)
         {
             ZType type = VisitType(context.type());
@@ -81,6 +104,11 @@ namespace Zelt.Visitors
             return new ZListType(type);
         }
 
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
         public override ZFunctionType VisitFunctionType([NotNull] ZeltParser.FunctionTypeContext context)
         {
             List<ZType> parameterTypes = new List<ZType>();
@@ -100,6 +128,11 @@ namespace Zelt.Visitors
             return new ZFunctionType(parameterTypes, returnTypes);
         }
 
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
         public override ZType VisitFunctionCallerType([NotNull] ZeltParser.FunctionCallerTypeContext context)
         {
             ZType callerType = VisitCallerType(context.callerType());
@@ -121,6 +154,11 @@ namespace Zelt.Visitors
             return new ZFunctionType(parameterTypes, returnTypes, callerType);
         }
 
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
         public override ZType VisitStructType([NotNull] ZeltParser.StructTypeContext context)
         {
             List<ZType> memberTypes = new List<ZType>();

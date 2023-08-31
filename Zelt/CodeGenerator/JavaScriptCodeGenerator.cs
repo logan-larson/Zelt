@@ -11,16 +11,20 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Zelt.CodeGenerator
 {
+    /// <summary>
+    /// Generates JavaScript code from the Zelt AST.
+    /// </summary>
     public class JavaScriptCodeGenerator : ICodeGenerator
     {
+        /// <inheritdoc />
         public StreamWriter Stream { get; set; }
 
-        public Dictionary<EZUnaryOperator, string> UnaryOperators = new Dictionary<EZUnaryOperator, string>()
+        private Dictionary<EZUnaryOperator, string> _unaryOperators = new Dictionary<EZUnaryOperator, string>()
         {
             {  EZUnaryOperator.Negate, "!" }
         };
 
-        public Dictionary<EZBinaryOperator, string> BinaryOperators = new Dictionary<EZBinaryOperator, string>()
+        private Dictionary<EZBinaryOperator, string> _binaryOperators = new Dictionary<EZBinaryOperator, string>()
         {
             { EZBinaryOperator.Multiply, "*" },
             { EZBinaryOperator.Divide, "/" },
@@ -37,11 +41,16 @@ namespace Zelt.CodeGenerator
             { EZBinaryOperator.Or, "||" },
         };
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JavaScriptCodeGenerator"/> class.
+        /// </summary>
+        /// <param name="stream">The stream to write the code to.</param>
         public JavaScriptCodeGenerator(StreamWriter stream)
         {
             Stream = stream;
         }
 
+        /// <inheritdoc />
         public void GenerateCodeForProgram(ZProgram program)
         {
             if (Stream is null)
@@ -55,63 +64,74 @@ namespace Zelt.CodeGenerator
             }
         }
 
-        public void GenerateCodeForStatement(IZStatement statement)
-        {
-            // Determine the type of statement
-            if (statement is ZDeclarationStatement declarationStatement)
-            {
-                GenerateCodeForDeclarationStatement(declarationStatement, false);
-            }
-            else if (statement is ZAssignmentStatement assignmentStatement)
-            {
-                GenerateCodeForAssignmentStatement(assignmentStatement);
-            }
-            else if (statement is ZIfStatement ifStatement)
-            {
-                GenerateCodeForIfStatement(ifStatement);
-            }
-            else if (statement is ZWhileStatement whileStatement)
-            {
-                GenerateCodeForWhileStatement(whileStatement);
-            }
-            else if (statement is ZEachStatement eachStatement)
-            {
-                GenerateCodeForEachStatement(eachStatement);
-            }
-            else if (statement is ZReturnStatement returnStatement)
-            {
-                GenerateCodeForReturnStatement(returnStatement);
-            }
-            else if (statement is ZExpressionStatement expressionStatement)
-            {
-                GenerateCodeForExpressionStatement(expressionStatement);
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        // ------------------------------ Statements ------------------------------
-
-        public void GenerateCodeForDeclarationStatement(ZDeclarationStatement statement, bool hasAssignment = true)
-        {
-            GenerateCodeForDeclaration(statement.Declarations, hasAssignment);
-            Stream.WriteLine(";");
-        }
-
-        public void GenerateCodeForAssignmentStatement(ZAssignmentStatement statement)
-        {
-            GenerateCodeForAssignment(statement.Assignments, statement.Assignments[0].IsDeclaration);
-            Stream.WriteLine(";");
-        }
-
-        public void GenerateCodeForExpressionStatement(ZExpressionStatement statement)
+        /// <inheritdoc />
+        public void GenerateCodeForStatement(ZStatement statement)
         {
             GenerateCodeForExpression(statement.Expression);
             Stream.WriteLine(";");
         }
 
+        /// <inheritdoc />
+        public void GenerateCodeForExpression(IZExpression expression)
+        {
+            switch (expression)
+            {
+                case ZLiteralExpression<int> intExpression:
+                    GenerateCodeForIntegerExpression(intExpression);
+                    break;
+                case ZLiteralExpression<float> floatExpression:
+                    GenerateCodeForFloatExpression(floatExpression);
+                    break;
+                case ZLiteralExpression<string> stringExpression:
+                    GenerateCodeForStringExpression(stringExpression);
+                    break;
+                case ZLiteralExpression<bool> boolExpression:
+                    GenerateCodeForBoolExpression(boolExpression);
+                    break;
+                case ZIdentifierExpression identifierExpression:
+                    GenerateCodeForIdentifier(identifierExpression);
+                    break;
+                case ZUnaryExpression unaryExpression:
+                    GenerateCodeForUnaryExpression(unaryExpression);
+                    break;
+                case ZBinaryExpression binaryExpression:
+                    GenerateCodeForBinaryExpression(binaryExpression);
+                    break;
+                case ZListExpression listExpression:
+                    GenerateCodeForListExpression(listExpression);
+                    break;
+                case ZFunctionExpression functionExpression:
+                    GenerateCodeForFunctionExpression(functionExpression);
+                    break;
+                case ZStructExpression structExpression:
+                    GenerateCodeForStructExpression(structExpression);
+                    break;
+                case ZStructConstructorExpression structConstructorExpression:
+                    GenerateCodeForStructConstructorExpression(structConstructorExpression);
+                    break;
+                case ZCallerExpression callerExpression:
+                    GenerateCodeForCallerExpression(callerExpression);
+                    break;
+                case ZChainedExpression chainedExpression:
+                    GenerateCodeForChainedExpression(chainedExpression);
+                    break;
+                case ZFunctionCallExpression functionCallExpression:
+                    GenerateCodeForFunctionCallExpression(functionCallExpression);
+                    break;
+                case ZExpressionPlaceholder expressionPlaceholder:
+                    GenerateCodeForExpressionPlaceholder(expressionPlaceholder);
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        /// <inheritdoc />
+        public void GenerateCodeForIdentifier(ZIdentifierExpression identifier)
+        {
+            Stream.Write(identifier.Name);
+        }
+        /*
         public void GenerateCodeForIfStatement(ZIfStatement statement)
         {
             Stream.Write("if (");
@@ -195,15 +215,19 @@ namespace Zelt.CodeGenerator
             }
             Stream.WriteLine("];");
         }
+        */
 
-        // -------------------- Assignments and Declarations ----------------------
 
+        #region Assignments and Declarations
+
+        /// <inheritdoc />
         public void GenerateCodeForDeclaration(List<ZDeclaration> declarations, bool hasAssignment = true)
         {
             string declarationsString = string.Join(", ", declarations.Select(v => v.Variable.Name));
             Stream.Write($"let {(hasAssignment ? "[" : "")}{declarationsString}{(hasAssignment ? "]" : "")}");
         }
 
+        /// <inheritdoc />
         public void GenerateCodeForAssignment(List<ZAssignment> assignments, bool isDeclaration)
         {
 
@@ -258,87 +282,35 @@ namespace Zelt.CodeGenerator
             Stream.Write("]");
         }
 
-        // ------------------------------ Expressions ------------------------------
+        #endregion
 
-        public void GenerateCodeForExpression(IZExpression expression)
-        {
-            switch (expression)
-            {
-                case ZLiteralExpression<int> intExpression:
-                    GenerateCodeForIntegerExpression(intExpression);
-                    break;
-                case ZLiteralExpression<float> floatExpression:
-                    GenerateCodeForFloatExpression(floatExpression);
-                    break;
-                case ZLiteralExpression<string> stringExpression:
-                    GenerateCodeForStringExpression(stringExpression);
-                    break;
-                case ZLiteralExpression<bool> boolExpression:
-                    GenerateCodeForBoolExpression(boolExpression);
-                    break;
-                case ZIdentifierExpression identifierExpression:
-                    GenerateCodeForIdentifier(identifierExpression);
-                    break;
-                case ZUnaryExpression unaryExpression:
-                    GenerateCodeForUnaryExpression(unaryExpression);
-                    break;
-                case ZBinaryExpression binaryExpression:
-                    GenerateCodeForBinaryExpression(binaryExpression);
-                    break;
-                case ZListExpression listExpression:
-                    GenerateCodeForListExpression(listExpression);
-                    break;
-                case ZFunctionExpression functionExpression:
-                    GenerateCodeForFunctionExpression(functionExpression);
-                    break;
-                case ZStructExpression structExpression:
-                    GenerateCodeForStructExpression(structExpression);
-                    break;
-                case ZStructConstructorExpression structConstructorExpression:
-                    GenerateCodeForStructConstructorExpression(structConstructorExpression);
-                    break;
-                case ZCallerExpression callerExpression:
-                    GenerateCodeForCallerExpression(callerExpression);
-                    break;
-                case ZChainedExpression chainedExpression:
-                    GenerateCodeForChainedExpression(chainedExpression);
-                    break;
-                case ZFunctionCallExpression functionCallExpression:
-                    GenerateCodeForFunctionCallExpression(functionCallExpression);
-                    break;
-                case ZExpressionPlaceholder expressionPlaceholder:
-                    GenerateCodeForExpressionPlaceholder(expressionPlaceholder);
-                    break;
-                default:
-                    throw new NotImplementedException();
-            }
-        }
+        #region Expressions
 
+        /// <inheritdoc />
         public void GenerateCodeForIntegerExpression(ZLiteralExpression<int> integerExpression)
         {
             Stream.Write(integerExpression.Value.ToString());
         }
 
+        /// <inheritdoc />
         public void GenerateCodeForFloatExpression(ZLiteralExpression<float> floatExpression)
         {
             Stream.Write(floatExpression.Value.ToString());
         }
 
+        /// <inheritdoc />
         public void GenerateCodeForStringExpression(ZLiteralExpression<string> stringExpression)
         {
             Stream.Write(stringExpression.Value);
         }
 
+        /// <inheritdoc />
         public void GenerateCodeForBoolExpression(ZLiteralExpression<bool> boolExpression)
         {
             Stream.Write(boolExpression.Value.ToString().ToLowerInvariant());
         }
 
-        public void GenerateCodeForIdentifier(ZIdentifierExpression identifier)
-        {
-            Stream.Write(identifier.Name);
-        }
-
+        /// <inheritdoc />
         public void GenerateCodeForListExpression(ZListExpression listExpression)
         {
             Stream.Write("[");
@@ -353,6 +325,7 @@ namespace Zelt.CodeGenerator
             Stream.Write("]");
         }
 
+        /// <inheritdoc />
         public void GenerateCodeForFunctionExpression(ZFunctionExpression functionExpression)
         {
             // Add the function keyword and parameters
@@ -375,7 +348,7 @@ namespace Zelt.CodeGenerator
             Stream.WriteLine(") {");
 
             // Add the function body
-            foreach (IZStatement statement in functionExpression.Body)
+            foreach (ZStatement statement in functionExpression.Body)
             {
                 // Assuming there is a method to generate code for each statement
                 GenerateCodeForStatement(statement);
@@ -384,6 +357,7 @@ namespace Zelt.CodeGenerator
             Stream.WriteLine("}");
         }
 
+        /// <inheritdoc />
         public void GenerateCodeForStructExpression(ZStructExpression structExpression)
         {
             // Do the instantiation
@@ -424,6 +398,7 @@ namespace Zelt.CodeGenerator
             Stream.Write("}");
         }
 
+        /// <inheritdoc />
         public void GenerateCodeForStructConstructorExpression(ZStructConstructorExpression structConstructorExpression)
         {
             Stream.Write($"new {structConstructorExpression.Name}(");
@@ -439,37 +414,34 @@ namespace Zelt.CodeGenerator
             Stream.Write(")");
         }
 
+        /// <inheritdoc />
         public void GenerateCodeForCallerExpression(ZCallerExpression callerExpression)
         {
             Stream.Write("caller");
         }
 
+        /// <inheritdoc />
         public void GenerateCodeForUnaryExpression(ZUnaryExpression expression)
         {
-            Stream.Write(UnaryOperators[expression.Operator.Operator]);
+            Stream.Write(_unaryOperators[expression.Operator.Operator]);
             Stream.Write("(");
             GenerateCodeForExpression(expression.Expression);
             Stream.Write(")");
         }
 
+        /// <inheritdoc />
         public void GenerateCodeForBinaryExpression(ZBinaryExpression expression)
         {
-            if (expression.Operators.Count != expression.Expressions.Count - 1)
-                throw new Exception("Invalid number of operators in binary expression");
-
             Stream.Write("(");
 
-            GenerateCodeForExpression(expression.Expressions[0]);
-
-            for (int i = 0; i <expression.Operators.Count; i++)
-            {
-                Stream.Write(BinaryOperators[expression.Operators[i].Operator]);
-                GenerateCodeForExpression(expression.Expressions[i + 1]);
-            }
+            GenerateCodeForExpression(expression.Left);
+            Stream.Write(_binaryOperators[expression.Operator.Operator]);
+            GenerateCodeForExpression(expression.Right);
 
             Stream.Write(")");
         }
 
+        /// <inheritdoc />
         public void GenerateCodeForChainedExpression(ZChainedExpression expression)
         {
             if (expression.Expressions == null || expression.Expressions.Count == 0)
@@ -487,6 +459,7 @@ namespace Zelt.CodeGenerator
             }
         }
 
+        /// <inheritdoc />
         public void GenerateCodeForFunctionCallExpression(ZFunctionCallExpression functionCall)
         {
             // Write the function name
@@ -506,9 +479,12 @@ namespace Zelt.CodeGenerator
             Stream.Write(")");
         }
 
+        /// <inheritdoc />
         public void GenerateCodeForExpressionPlaceholder(ZExpressionPlaceholder expressionPlaceholder)
         {
             //Stream.Write(expressionPlaceholder.Name);
         }
+
+        #endregion
     }
 }

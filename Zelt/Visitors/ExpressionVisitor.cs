@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 using Zelt.AST;
 using Zelt.Grammar;
 
+// TODO: Fill out the XML comments for this file
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
 namespace Zelt.Visitors
 {
     public class ExpressionVisitor : ZeltParserBaseVisitor<IZExpression>
